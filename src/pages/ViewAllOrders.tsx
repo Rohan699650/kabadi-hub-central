@@ -5,18 +5,20 @@ import {
   CheckCircle,
   XCircle,
   Users,
-  Calendar,
   Download,
   Search,
   Filter,
+  Eye,
+  FileText,
 } from 'lucide-react';
 import { AdminLayout } from '@/components/layout/AdminLayout';
+import { PageHeader } from '@/components/layout/PageHeader';
 import { KPICard } from '@/components/dashboard/KPICard';
-import { OrdersTable } from '@/components/orders/OrdersTable';
 import { OrderDetailDialog } from '@/components/orders/OrderDetailDialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
 import {
   Select,
   SelectContent,
@@ -24,9 +26,18 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { mockOrders, mockPartners } from '@/data/mockData';
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@/components/ui/table';
+import { mockOrders, mockPartners, areasByCity } from '@/data/mockData';
 import { Order, OrderStatus } from '@/types';
 import { PieChart, Pie, Cell, ResponsiveContainer, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend } from 'recharts';
+import { format } from 'date-fns';
 
 const statusOptions: { value: OrderStatus | 'all'; label: string }[] = [
   { value: 'all', label: 'All Statuses' },
@@ -38,7 +49,7 @@ const statusOptions: { value: OrderStatus | 'all'; label: string }[] = [
   { value: 'cancelled', label: 'Cancelled' },
 ];
 
-const areaOptions = ['All Areas', 'Koramangala', 'HSR Layout', 'Indiranagar', 'Whitefield', 'Jayanagar', 'BTM Layout', 'Electronic City'];
+const areaOptions = ['All Areas', ...areasByCity['Bangalore']];
 
 export default function ViewAllOrders() {
   const navigate = useNavigate();
@@ -66,10 +77,10 @@ export default function ViewAllOrders() {
   const cancelledOrders = mockOrders.filter(o => o.status === 'cancelled').length;
   const repeatCustomers = new Set(mockOrders.map(o => o.customerId)).size;
 
+  // Pie chart for Completed vs Cancelled only
   const pieData = [
     { name: 'Completed', value: completedOrders, color: 'hsl(142, 76%, 36%)' },
     { name: 'Cancelled', value: cancelledOrders, color: 'hsl(0, 84%, 60%)' },
-    { name: 'Other', value: totalOrders - completedOrders - cancelledOrders, color: 'hsl(199, 89%, 48%)' },
   ];
 
   const lineData = [
@@ -83,18 +94,40 @@ export default function ViewAllOrders() {
   ];
 
   const handleExportCSV = () => {
-    const headers = ['Order ID', 'Customer', 'Phone', 'Area', 'Pickup Date', 'Status', 'Partner', 'Amount'];
+    const headers = [
+      'Order ID', 'Customer', 'Partner', 'City', 'Area', 'Scrap Category',
+      'Created At', 'Assigned At', 'Pickup Date', 'Started At', 'Arrived At',
+      'Invoice Submitted', 'Invoice Approved', 'Completed At', 'Cancelled At',
+      'Cancelled By', 'Cancel Reason', 'Customer Amount', 'Partner Amount',
+      'Commission', 'Payment Mode', 'Payment Status', 'Final Status', 'Admin Notes'
+    ];
     const csvContent = [
       headers.join(','),
       ...filteredOrders.map(order => [
         order.id,
         order.customerName,
-        order.customerPhone,
+        order.partnerName || '',
+        order.city,
         order.area,
-        order.pickupDate.toISOString().split('T')[0],
-        order.status,
-        order.partnerName || 'Unassigned',
+        order.scrapCategory,
+        order.createdAt ? format(order.createdAt, 'yyyy-MM-dd HH:mm') : '',
+        order.assignedAt ? format(order.assignedAt, 'yyyy-MM-dd HH:mm') : '',
+        order.pickupDate ? format(order.pickupDate, 'yyyy-MM-dd') : '',
+        order.startedAt ? format(order.startedAt, 'yyyy-MM-dd HH:mm') : '',
+        order.arrivedAt ? format(order.arrivedAt, 'yyyy-MM-dd HH:mm') : '',
+        order.invoiceSubmittedAt ? format(order.invoiceSubmittedAt, 'yyyy-MM-dd HH:mm') : '',
+        order.invoiceApprovedAt ? format(order.invoiceApprovedAt, 'yyyy-MM-dd HH:mm') : '',
+        order.completedAt ? format(order.completedAt, 'yyyy-MM-dd HH:mm') : '',
+        order.cancelledAt ? format(order.cancelledAt, 'yyyy-MM-dd HH:mm') : '',
+        order.cancelledBy || '',
+        order.cancelReason || '',
         order.customerInvoice?.total || 0,
+        order.partnerInvoice?.total || 0,
+        order.commission || 0,
+        order.paymentMode || '',
+        order.paymentStatus || '',
+        order.status,
+        order.adminNotes || '',
       ].join(','))
     ].join('\n');
 
@@ -114,16 +147,17 @@ export default function ViewAllOrders() {
   return (
     <AdminLayout onLogout={() => navigate('/login')}>
       <div className="space-y-6">
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-2xl font-bold">All Orders</h1>
-            <p className="text-muted-foreground">Complete order history and analytics</p>
-          </div>
-          <Button onClick={handleExportCSV}>
-            <Download className="mr-2 h-4 w-4" />
-            Export CSV
-          </Button>
-        </div>
+        <PageHeader
+          title="All Orders"
+          description="Complete order history and analytics"
+          breadcrumbs={[{ label: 'View All Orders' }]}
+          actions={
+            <Button onClick={handleExportCSV}>
+              <Download className="mr-2 h-4 w-4" />
+              Export CSV
+            </Button>
+          }
+        />
 
         {/* KPI Cards */}
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
@@ -137,7 +171,7 @@ export default function ViewAllOrders() {
         <div className="grid gap-6 lg:grid-cols-2">
           <Card>
             <CardHeader>
-              <CardTitle>Order Distribution</CardTitle>
+              <CardTitle>Order Status Distribution (Completed vs Cancelled)</CardTitle>
             </CardHeader>
             <CardContent>
               <div className="h-[250px]">
@@ -241,11 +275,99 @@ export default function ViewAllOrders() {
           </CardContent>
         </Card>
 
-        {/* Orders Table */}
-        <OrdersTable
-          orders={filteredOrders}
-          onView={handleViewOrder}
-        />
+        {/* Orders Table with Full Lifecycle Columns */}
+        <Card>
+          <CardHeader>
+            <CardTitle>Order History</CardTitle>
+          </CardHeader>
+          <CardContent className="overflow-auto">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Order ID</TableHead>
+                  <TableHead>Customer</TableHead>
+                  <TableHead>Partner</TableHead>
+                  <TableHead>City / Area</TableHead>
+                  <TableHead>Scrap Category</TableHead>
+                  <TableHead>Created At</TableHead>
+                  <TableHead>Assigned At</TableHead>
+                  <TableHead>Pickup Date</TableHead>
+                  <TableHead>Completed/Cancelled</TableHead>
+                  <TableHead className="text-right">Customer Amt</TableHead>
+                  <TableHead className="text-right">Partner Amt</TableHead>
+                  <TableHead className="text-right">Commission</TableHead>
+                  <TableHead>Payment</TableHead>
+                  <TableHead>Status</TableHead>
+                  <TableHead className="text-right">Actions</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {filteredOrders.map((order) => (
+                  <TableRow key={order.id}>
+                    <TableCell className="font-mono">{order.id}</TableCell>
+                    <TableCell>{order.customerName}</TableCell>
+                    <TableCell>{order.partnerName || '-'}</TableCell>
+                    <TableCell>
+                      <div>
+                        <p className="font-medium">{order.city}</p>
+                        <p className="text-xs text-muted-foreground">{order.area}</p>
+                      </div>
+                    </TableCell>
+                    <TableCell>
+                      <Badge variant="outline">{order.scrapCategory}</Badge>
+                    </TableCell>
+                    <TableCell className="text-sm">
+                      {format(order.createdAt, 'MMM dd, HH:mm')}
+                    </TableCell>
+                    <TableCell className="text-sm">
+                      {order.assignedAt ? format(order.assignedAt, 'MMM dd, HH:mm') : '-'}
+                    </TableCell>
+                    <TableCell className="text-sm">
+                      {format(order.pickupDate, 'MMM dd')}
+                    </TableCell>
+                    <TableCell className="text-sm">
+                      {order.completedAt ? format(order.completedAt, 'MMM dd, HH:mm') : 
+                       order.cancelledAt ? format(order.cancelledAt, 'MMM dd, HH:mm') : '-'}
+                    </TableCell>
+                    <TableCell className="text-right font-mono">
+                      {order.customerInvoice ? `₹${order.customerInvoice.total.toLocaleString()}` : '-'}
+                    </TableCell>
+                    <TableCell className="text-right font-mono">
+                      {order.partnerInvoice ? `₹${order.partnerInvoice.total.toLocaleString()}` : '-'}
+                    </TableCell>
+                    <TableCell className="text-right font-mono text-success">
+                      {order.commission ? `₹${order.commission.toLocaleString()}` : '-'}
+                    </TableCell>
+                    <TableCell>
+                      {order.paymentStatus ? (
+                        <Badge variant="secondary" className={order.paymentStatus === 'paid' ? 'status-completed' : 'status-warning'}>
+                          {order.paymentStatus}
+                        </Badge>
+                      ) : '-'}
+                    </TableCell>
+                    <TableCell>
+                      <Badge variant="secondary" className={`status-${order.status}`}>
+                        {order.status}
+                      </Badge>
+                    </TableCell>
+                    <TableCell className="text-right">
+                      <div className="flex justify-end gap-1">
+                        <Button variant="ghost" size="icon" onClick={() => handleViewOrder(order)}>
+                          <Eye className="h-4 w-4" />
+                        </Button>
+                        {order.customerInvoice && (
+                          <Button variant="ghost" size="icon">
+                            <FileText className="h-4 w-4" />
+                          </Button>
+                        )}
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </CardContent>
+        </Card>
 
         <OrderDetailDialog
           order={selectedOrder}
