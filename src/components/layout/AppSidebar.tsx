@@ -9,6 +9,7 @@ import {
   Settings,
   Info,
   ChevronLeft,
+  FileText,
 } from 'lucide-react';
 import {
   Sidebar,
@@ -28,6 +29,7 @@ import { cn } from '@/lib/utils';
 const menuItems = [
   { title: 'Dashboard', url: '/', icon: LayoutDashboard },
   { title: 'View All Orders', url: '/orders', icon: ClipboardList },
+  { title: 'Invoices', url: '/invoices', icon: FileText },
   { title: 'Partners', url: '/partners', icon: Users },
   { title: 'Customers', url: '/customers', icon: UserCircle },
   { title: 'Pricing', url: '/pricing', icon: DollarSign },
