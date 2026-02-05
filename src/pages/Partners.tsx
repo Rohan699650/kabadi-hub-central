@@ -67,7 +67,7 @@ import { Partner, generatePartnerId } from '@/types';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 import { format } from 'date-fns';
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, Legend } from 'recharts';
+import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer, Legend } from 'recharts';
 
 export default function Partners() {
   const navigate = useNavigate();
@@ -90,14 +90,20 @@ export default function Partners() {
     godownDetails: false,
   });
 
-  const filteredPartners = mockPartners.filter((partner) =>
+  const [partners, setPartners] = useState(mockPartners);
+
+  const filteredPartners = partners.filter((partner) =>
     partner.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
     partner.phone.includes(searchQuery) ||
     partner.id.toLowerCase().includes(searchQuery.toLowerCase()) ||
     partner.areas.some(a => a.toLowerCase().includes(searchQuery.toLowerCase()))
   );
 
-  const handleToggleActive = (partner: Partner) => {
+  const handleToggleActive = (partner: Partner, event?: React.MouseEvent) => {
+    event?.stopPropagation();
+    setPartners(prev => prev.map(p => 
+      p.id === partner.id ? { ...p, isActive: !p.isActive } : p
+    ));
     toast.success(`${partner.name} ${partner.isActive ? 'disabled' : 'enabled'}`);
   };
 
@@ -169,12 +175,32 @@ export default function Partners() {
     unit: mat.unit,
   }));
 
-  // Partner comparison chart data
-  const partnerComparisonData = mockPartners.map(p => ({
+  // Pie chart data for completed orders comparison
+  const completedOrdersPieData = partners.map(p => ({
     name: p.name.split(' ')[0],
-    orders: p.completedOrders,
-    revenue: p.completedOrders * 450, // Estimated
+    value: p.completedOrders,
   }));
+  
+  // Pie chart data for cancelled orders comparison
+  const cancelledOrdersPieData = partners.map(p => ({
+    name: p.name.split(' ')[0],
+    value: p.cancelledOrders,
+  }));
+  
+  const COLORS = ['hsl(142, 76%, 36%)', 'hsl(199, 89%, 48%)', 'hsl(45, 93%, 47%)', 'hsl(0, 84%, 60%)', 'hsl(280, 65%, 60%)'];
+  const handleDownloadDocument = (docName: string, partner: Partner) => {
+    // Simulate document download
+    const content = `${docName.toUpperCase()} DOCUMENT\n\nPartner: ${partner.name}\nID: ${partner.id}\nPhone: ${partner.phone}\nCity: ${partner.city}\n\nDocument Status: ${partner.documents[docName as keyof typeof partner.documents]?.status || 'Not Available'}`;
+    
+    const blob = new Blob([content], { type: 'text/plain' });
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `${partner.id}-${docName}.txt`;
+    a.click();
+    toast.success(`${docName} document downloaded`);
+  };
+
 
   // Individual partner contribution chart
   const partnerContributionData = selectedPartner ? [
@@ -264,7 +290,7 @@ export default function Partners() {
                   <span className="text-sm text-muted-foreground">Active</span>
                   <Switch
                     checked={selectedPartner.isActive}
-                    onCheckedChange={() => handleToggleActive(selectedPartner)}
+                      onCheckedChange={() => handleToggleActive(selectedPartner)}
                   />
                 </div>
               </div>
@@ -445,16 +471,36 @@ export default function Partners() {
                           <FileText className="h-5 w-5 text-muted-foreground" />
                           <span className="font-medium capitalize">{doc}</span>
                         </div>
-                        <Badge
-                          variant="secondary"
-                          className={cn(
-                            data.status === 'approved' && 'status-completed',
-                            data.status === 'pending' && 'status-warning',
-                            data.status === 'rejected' && 'status-cancelled'
+                        <div className="flex items-center gap-2">
+                          <Badge
+                            variant="secondary"
+                            className={cn(
+                              data.status === 'approved' && 'status-completed',
+                              data.status === 'pending' && 'status-warning',
+                              data.status === 'rejected' && 'status-cancelled'
+                            )}
+                          >
+                            {data.status}
+                          </Badge>
+                          {data.url && (
+                            <div className="flex gap-1">
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => toast.info(`Viewing ${doc} document`)}
+                              >
+                                <Eye className="h-4 w-4" />
+                              </Button>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => handleDownloadDocument(doc, selectedPartner)}
+                              >
+                                <Download className="h-4 w-4" />
+                              </Button>
+                            </div>
                           )}
-                        >
-                          {data.status}
-                        </Badge>
+                        </div>
                       </div>
                     ))}
                   </div>
@@ -516,28 +562,72 @@ export default function Partners() {
           }
         />
 
-        {/* Partner Comparison Chart */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Users className="h-5 w-5" />
-              Partner Contribution Comparison
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="h-[200px]">
-              <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={partnerComparisonData}>
-                  <CartesianGrid strokeDasharray="3 3" />
-                  <XAxis dataKey="name" />
-                  <YAxis />
-                  <Tooltip />
-                  <Bar dataKey="orders" fill="hsl(142, 76%, 36%)" name="Completed Orders" radius={[4, 4, 0, 0]} />
-                </BarChart>
-              </ResponsiveContainer>
-            </div>
-          </CardContent>
-        </Card>
+        {/* Partner Comparison Pie Charts */}
+        <div className="grid gap-6 lg:grid-cols-2">
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <CheckCircle className="h-5 w-5 text-success" />
+                Partner Completed Orders Comparison
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="h-[200px]">
+                <ResponsiveContainer width="100%" height="100%">
+                  <PieChart>
+                    <Pie
+                      data={completedOrdersPieData}
+                      cx="50%"
+                      cy="50%"
+                      innerRadius={40}
+                      outerRadius={80}
+                      dataKey="value"
+                      label={({ name, value }) => `${name}: ${value}`}
+                    >
+                      {completedOrdersPieData.map((entry, index) => (
+                        <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                      ))}
+                    </Pie>
+                    <Tooltip />
+                    <Legend />
+                  </PieChart>
+                </ResponsiveContainer>
+              </div>
+            </CardContent>
+          </Card>
+          
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <XCircle className="h-5 w-5 text-destructive" />
+                Partner Cancelled Orders Comparison
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="h-[200px]">
+                <ResponsiveContainer width="100%" height="100%">
+                  <PieChart>
+                    <Pie
+                      data={cancelledOrdersPieData}
+                      cx="50%"
+                      cy="50%"
+                      innerRadius={40}
+                      outerRadius={80}
+                      dataKey="value"
+                      label={({ name, value }) => `${name}: ${value}`}
+                    >
+                      {cancelledOrdersPieData.map((entry, index) => (
+                        <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                      ))}
+                    </Pie>
+                    <Tooltip />
+                    <Legend />
+                  </PieChart>
+                </ResponsiveContainer>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
 
         {/* Search */}
         <div className="relative max-w-md">
@@ -598,7 +688,7 @@ export default function Partners() {
                         <Bell className="mr-2 h-4 w-4" /> Send Notification
                       </DropdownMenuItem>
                       <DropdownMenuSeparator />
-                      <DropdownMenuItem onClick={(e) => { e.stopPropagation(); handleToggleActive(partner); }}>
+                      <DropdownMenuItem onClick={(e) => { handleToggleActive(partner, e); }}>
                         <Power className="mr-2 h-4 w-4" />
                         {partner.isActive ? 'Disable' : 'Enable'}
                       </DropdownMenuItem>

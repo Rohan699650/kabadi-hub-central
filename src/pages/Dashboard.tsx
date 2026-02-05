@@ -15,12 +15,14 @@ import {
   MoreHorizontal,
   X as XIcon,
   UserPlus,
+  Home,
 } from 'lucide-react';
 import { AdminLayout } from '@/components/layout/AdminLayout';
 import { KPICard } from '@/components/dashboard/KPICard';
 import { OrderDetailDialog } from '@/components/orders/OrderDetailDialog';
 import { InvoiceApproval } from '@/components/invoice/InvoiceApproval';
 import { CreateOrderDialog } from '@/components/orders/CreateOrderDialog';
+import { PageHeader } from '@/components/layout/PageHeader';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -58,7 +60,6 @@ import { mockOrders, mockPartners, mockDashboardStats } from '@/data/mockData';
 import { Order } from '@/types';
 import { toast } from 'sonner';
 import { format } from 'date-fns';
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from 'recharts';
 
 type DashboardView = 'main' | 'new' | 'scheduled' | 'ongoing' | 'completed' | 'cancelled' | 'invoices';
 
@@ -81,15 +82,6 @@ export default function Dashboard() {
   const completedOrders = mockOrders.filter(o => o.status === 'completed');
   const cancelledOrders = mockOrders.filter(o => o.status === 'cancelled');
   const pendingInvoiceOrders = mockOrders.filter(o => o.invoiceStatus === 'pending');
-
-  // Bar chart data
-  const chartData = [
-    { name: 'New', value: mockDashboardStats.newOrdersToday, fill: 'hsl(199, 89%, 48%)' },
-    { name: 'Scheduled', value: mockDashboardStats.scheduledOrdersToday, fill: 'hsl(221, 83%, 53%)' },
-    { name: 'Ongoing', value: mockDashboardStats.ongoingOrdersToday, fill: 'hsl(45, 93%, 47%)' },
-    { name: 'Completed', value: mockDashboardStats.completedOrdersToday, fill: 'hsl(142, 76%, 36%)' },
-    { name: 'Cancelled', value: mockDashboardStats.cancelledOrdersToday, fill: 'hsl(0, 84%, 60%)' },
-  ];
 
   const handleAssign = () => {
     if (assignDialog.order && selectedPartnerId) {
@@ -153,18 +145,20 @@ export default function Dashboard() {
       case 'new':
         return (
           <div className="space-y-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <h2 className="text-2xl font-bold">New Orders Today</h2>
-                <p className="text-muted-foreground">Orders created today (including future pickups)</p>
-              </div>
-              <div className="flex gap-2">
-                <CreateOrderDialog />
-                <Button variant="outline" onClick={() => setView('main')}>
-                  ← Back to Dashboard
-                </Button>
-              </div>
-            </div>
+            <PageHeader
+              title="New Orders Today"
+              description="Orders created today (including future pickups)"
+              breadcrumbs={[{ label: 'New Orders Today' }]}
+              showBackToDashboard={false}
+              actions={
+                <div className="flex gap-2">
+                  <CreateOrderDialog />
+                  <Button variant="outline" onClick={() => setView('main')}>
+                    ← Back to Dashboard
+                  </Button>
+                </div>
+              }
+            />
             <Card>
               <CardContent className="pt-6">
                 <Table>
@@ -246,18 +240,20 @@ export default function Dashboard() {
       case 'scheduled':
         return (
           <div className="space-y-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <h2 className="text-2xl font-bold">Scheduled Orders Today</h2>
-                <p className="text-muted-foreground">Assigned orders for today's pickup</p>
-              </div>
-              <div className="flex gap-2">
-                <CreateOrderDialog />
-                <Button variant="outline" onClick={() => setView('main')}>
-                  ← Back to Dashboard
-                </Button>
-              </div>
-            </div>
+            <PageHeader
+              title="Scheduled Orders Today"
+              description="Assigned orders for today's pickup"
+              breadcrumbs={[{ label: 'Scheduled Orders Today' }]}
+              showBackToDashboard={false}
+              actions={
+                <div className="flex gap-2">
+                  <CreateOrderDialog />
+                  <Button variant="outline" onClick={() => setView('main')}>
+                    ← Back to Dashboard
+                  </Button>
+                </div>
+              }
+            />
             <Card>
               <CardContent className="pt-6">
                 <Table>
@@ -345,18 +341,20 @@ export default function Dashboard() {
       case 'ongoing':
         return (
           <div className="space-y-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <h2 className="text-2xl font-bold">Ongoing Orders Today</h2>
-                <p className="text-muted-foreground">Orders in progress (on-the-way / arrived)</p>
-              </div>
-              <div className="flex gap-2">
-                <CreateOrderDialog />
-                <Button variant="outline" onClick={() => setView('main')}>
-                  ← Back to Dashboard
-                </Button>
-              </div>
-            </div>
+            <PageHeader
+              title="Ongoing Orders Today"
+              description="Orders in progress (on-the-way / arrived)"
+              breadcrumbs={[{ label: 'Ongoing Orders Today' }]}
+              showBackToDashboard={false}
+              actions={
+                <div className="flex gap-2">
+                  <CreateOrderDialog />
+                  <Button variant="outline" onClick={() => setView('main')}>
+                    ← Back to Dashboard
+                  </Button>
+                </div>
+              }
+            />
             <Card>
               <CardContent className="pt-6">
                 <Table>
@@ -443,15 +441,17 @@ export default function Dashboard() {
       case 'completed':
         return (
           <div className="space-y-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <h2 className="text-2xl font-bold">Completed Orders Today</h2>
-                <p className="text-muted-foreground">Orders completed in the last 24 hours</p>
-              </div>
-              <Button variant="outline" onClick={() => setView('main')}>
-                ← Back to Dashboard
-              </Button>
-            </div>
+            <PageHeader
+              title="Completed Orders Today"
+              description="Orders completed in the last 24 hours"
+              breadcrumbs={[{ label: 'Completed Orders Today' }]}
+              showBackToDashboard={false}
+              actions={
+                <Button variant="outline" onClick={() => setView('main')}>
+                  ← Back to Dashboard
+                </Button>
+              }
+            />
             <Card>
               <CardContent className="pt-6">
                 <Table>
@@ -518,15 +518,17 @@ export default function Dashboard() {
       case 'cancelled':
         return (
           <div className="space-y-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <h2 className="text-2xl font-bold">Cancelled Orders Today</h2>
-                <p className="text-muted-foreground">Orders cancelled in the last 24 hours</p>
-              </div>
-              <Button variant="outline" onClick={() => setView('main')}>
-                ← Back to Dashboard
-              </Button>
-            </div>
+            <PageHeader
+              title="Cancelled Orders Today"
+              description="Orders cancelled in the last 24 hours"
+              breadcrumbs={[{ label: 'Cancelled Orders Today' }]}
+              showBackToDashboard={false}
+              actions={
+                <Button variant="outline" onClick={() => setView('main')}>
+                  ← Back to Dashboard
+                </Button>
+              }
+            />
             <Card>
               <CardContent className="pt-6">
                 <Table>
@@ -579,15 +581,17 @@ export default function Dashboard() {
       case 'invoices':
         return (
           <div className="space-y-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <h2 className="text-2xl font-bold">Pending Invoice Approvals</h2>
-                <p className="text-muted-foreground">Invoices waiting for admin review</p>
-              </div>
-              <Button variant="outline" onClick={() => setView('main')}>
-                ← Back to Dashboard
-              </Button>
-            </div>
+            <PageHeader
+              title="Pending Invoice Approvals"
+              description="Invoices waiting for admin review"
+              breadcrumbs={[{ label: 'Pending Invoices' }]}
+              showBackToDashboard={false}
+              actions={
+                <Button variant="outline" onClick={() => setView('main')}>
+                  ← Back to Dashboard
+                </Button>
+              }
+            />
             {pendingInvoiceOrders.length === 0 ? (
               <Card>
                 <CardContent className="flex flex-col items-center justify-center py-12">
@@ -627,10 +631,12 @@ export default function Dashboard() {
       default:
         return (
           <div className="space-y-6 animate-fade-in">
-            <div>
-              <h1 className="text-2xl font-bold">Dashboard</h1>
-              <p className="text-muted-foreground">Today's operations at a glance</p>
-            </div>
+            <PageHeader
+              title="Dashboard"
+              description="Today's operations at a glance"
+              breadcrumbs={[]}
+              showBackToDashboard={false}
+            />
 
             {/* KPI Cards Grid */}
             <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
@@ -694,26 +700,6 @@ export default function Dashboard() {
                 prefix="₹"
               />
             </div>
-
-            {/* KPI Bar Chart */}
-            <Card>
-              <CardHeader>
-                <CardTitle>Today's Order KPI Comparison</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="h-[250px]">
-                  <ResponsiveContainer width="100%" height="100%">
-                    <BarChart data={chartData}>
-                      <CartesianGrid strokeDasharray="3 3" />
-                      <XAxis dataKey="name" />
-                      <YAxis />
-                      <Tooltip />
-                      <Bar dataKey="value" fill="hsl(142, 76%, 36%)" radius={[4, 4, 0, 0]} />
-                    </BarChart>
-                  </ResponsiveContainer>
-                </div>
-              </CardContent>
-            </Card>
 
             {/* Quick Actions */}
             <div className="grid gap-4 lg:grid-cols-2">

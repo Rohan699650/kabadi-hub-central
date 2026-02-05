@@ -16,6 +16,7 @@ import {
   StickyNote,
   Plus,
   User,
+  Users,
 } from 'lucide-react';
 import { AdminLayout } from '@/components/layout/AdminLayout';
 import { PageHeader } from '@/components/layout/PageHeader';
@@ -62,6 +63,7 @@ import { format } from 'date-fns';
 export default function Customers() {
   const navigate = useNavigate();
   const [searchQuery, setSearchQuery] = useState('');
+  const [customers, setCustomers] = useState(mockCustomers);
   const [selectedCustomer, setSelectedCustomer] = useState<Customer | null>(null);
   const [deleteDialog, setDeleteDialog] = useState<{ open: boolean; customer: Customer | null }>({
     open: false,
@@ -75,6 +77,8 @@ export default function Customers() {
   });
   const [messageText, setMessageText] = useState('');
   const [messageCustomerId, setMessageCustomerId] = useState('');
+  const [broadcastMode, setBroadcastMode] = useState(false);
+  const [dateFilter, setDateFilter] = useState('');
   const [newCustomer, setNewCustomer] = useState({
     name: '',
     phone: '',
@@ -85,15 +89,21 @@ export default function Customers() {
     notes: '',
   });
 
-  const filteredCustomers = mockCustomers.filter((customer) =>
-    customer.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    customer.phone.includes(searchQuery) ||
-    customer.area.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    customer.id.toLowerCase().includes(searchQuery.toLowerCase())
-  );
+  const filteredCustomers = customers.filter((customer) => {
+    const matchesSearch = customer.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      customer.phone.includes(searchQuery) ||
+      customer.area.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      customer.id.toLowerCase().includes(searchQuery.toLowerCase());
+    
+    const matchesDate = !dateFilter || 
+      (customer.createdAt && customer.createdAt >= new Date(dateFilter));
+    
+    return matchesSearch && matchesDate;
+  });
 
   const handleDelete = () => {
     if (deleteDialog.customer) {
+      setCustomers(prev => prev.filter(c => c.id !== deleteDialog.customer!.id));
       toast.success(`${deleteDialog.customer.name} deleted`);
       setDeleteDialog({ open: false, customer: null });
     }
@@ -104,6 +114,20 @@ export default function Customers() {
       toast.error('Please fill required fields');
       return;
     }
+    const newCust: Customer = {
+      id: generateCustomerId(),
+      name: newCustomer.name,
+      phone: newCustomer.phone,
+      email: newCustomer.email,
+      city: newCustomer.city,
+      area: newCustomer.area,
+      address: newCustomer.address,
+      totalOrders: 0,
+      totalAmount: 0,
+      notes: newCustomer.notes,
+      createdAt: new Date(),
+    };
+    setCustomers(prev => [newCust, ...prev]);
     toast.success(`Customer ${newCustomer.name} created`);
     setCreateDialog(false);
     setNewCustomer({
@@ -125,11 +149,23 @@ export default function Customers() {
   };
 
   const handleSendMessage = () => {
+    if (broadcastMode) {
+      if (!messageText) {
+        toast.error('Please enter a message');
+        return;
+      }
+      toast.success(`Message sent to all ${customers.length} customers`);
+      setSendMessageDialog({ open: false, customerId: '' });
+      setMessageText('');
+      setBroadcastMode(false);
+      return;
+    }
+    
     if (!messageCustomerId || !messageText) {
       toast.error('Please enter customer ID and message');
       return;
     }
-    const customer = mockCustomers.find(c => c.id === messageCustomerId);
+    const customer = customers.find(c => c.id === messageCustomerId);
     if (!customer) {
       toast.error('Customer not found');
       return;
@@ -390,14 +426,26 @@ export default function Customers() {
         />
 
         {/* Search */}
-        <div className="relative max-w-md">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-          <Input
-            placeholder="Search by name, phone, ID, or area..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="pl-9"
-          />
+        <div className="flex flex-wrap gap-4">
+          <div className="relative flex-1 min-w-[200px]">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+            <Input
+              placeholder="Search by name, phone, ID, or area..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="pl-9"
+            />
+          </div>
+          <div className="flex items-center gap-2">
+            <Calendar className="h-4 w-4 text-muted-foreground" />
+            <Input
+              type="date"
+              value={dateFilter}
+              onChange={(e) => setDateFilter(e.target.value)}
+              className="w-[180px]"
+              placeholder="Filter by date"
+            />
+          </div>
         </div>
 
         {/* Customers Table */}
@@ -565,15 +613,35 @@ export default function Customers() {
       </Dialog>
 
       {/* Send Message Dialog - ID-based targeting */}
-      <Dialog open={sendMessageDialog.open} onOpenChange={(open) => setSendMessageDialog({ open, customerId: '' })}>
+      <Dialog open={sendMessageDialog.open} onOpenChange={(open) => { setSendMessageDialog({ open, customerId: '' }); setBroadcastMode(false); }}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Send Message to Customer</DialogTitle>
+            <DialogTitle>Send Message to Customer{broadcastMode ? 's' : ''}</DialogTitle>
             <DialogDescription>
-              Enter customer ID to send an in-app notification
+              {broadcastMode ? `Send message to all ${customers.length} customers` : 'Enter customer ID to send an in-app notification'}
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4 py-4">
+            <div className="flex items-center gap-4 p-3 rounded-lg bg-muted/50">
+              <Button
+                variant={!broadcastMode ? 'default' : 'outline'}
+                size="sm"
+                onClick={() => setBroadcastMode(false)}
+              >
+                <User className="mr-2 h-4 w-4" />
+                Individual
+              </Button>
+              <Button
+                variant={broadcastMode ? 'default' : 'outline'}
+                size="sm"
+                onClick={() => setBroadcastMode(true)}
+              >
+                <Users className="mr-2 h-4 w-4" />
+                Broadcast to All
+              </Button>
+            </div>
+            
+            {!broadcastMode && (
             <div className="space-y-2">
               <label className="text-sm font-medium">Customer ID</label>
               <Input
@@ -582,6 +650,8 @@ export default function Customers() {
                 placeholder="KM250101"
               />
             </div>
+            )}
+            
             <div className="space-y-2">
               <label className="text-sm font-medium">Message</label>
               <Textarea
@@ -593,10 +663,10 @@ export default function Customers() {
             </div>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setSendMessageDialog({ open: false, customerId: '' })}>Cancel</Button>
+            <Button variant="outline" onClick={() => { setSendMessageDialog({ open: false, customerId: '' }); setBroadcastMode(false); }}>Cancel</Button>
             <Button onClick={handleSendMessage}>
               <Send className="mr-2 h-4 w-4" />
-              Send Message
+              {broadcastMode ? `Send to All (${customers.length})` : 'Send Message'}
             </Button>
           </DialogFooter>
         </DialogContent>

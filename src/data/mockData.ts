@@ -620,7 +620,7 @@ export const scrapCategories = [
   'Other',
 ];
 
-export const cities = ['Bangalore', 'Mumbai', 'Delhi', 'Chennai', 'Hyderabad'];
+export const cities = ['Bangalore', 'Mumbai', 'Delhi', 'Chennai', 'Hyderabad', 'Belgaum', 'Kolhapur'];
 
 export const areasByCity: Record<string, string[]> = {
   Bangalore: ['Koramangala', 'HSR Layout', 'Indiranagar', 'Whitefield', 'Jayanagar', 'BTM Layout', 'Electronic City', 'Marathahalli', 'JP Nagar', 'Mahadevpura'],
@@ -628,14 +628,30 @@ export const areasByCity: Record<string, string[]> = {
   Delhi: ['Connaught Place', 'Karol Bagh', 'Dwarka', 'Rohini', 'Saket'],
   Chennai: ['Anna Nagar', 'T Nagar', 'Adyar', 'Velachery', 'Mylapore'],
   Hyderabad: ['Banjara Hills', 'Madhapur', 'Gachibowli', 'Jubilee Hills', 'Secunderabad'],
+  Belgaum: ['Tilakwadi', 'Camp', 'Khanapur', 'Shahpur', 'Vadgaon'],
+  Kolhapur: ['Rajarampuri', 'Shahupuri', 'Tarabai Park', 'Nagala Park', 'Kasaba Bawada'],
 };
 
 export const pickupSlots = [
-  '8:00 AM - 10:00 AM',
-  '9:00 AM - 11:00 AM',
-  '10:00 AM - 12:00 PM',
-  '11:00 AM - 1:00 PM',
-  '2:00 PM - 4:00 PM',
-  '3:00 PM - 5:00 PM',
-  '4:00 PM - 6:00 PM',
+  '9:00 AM - 10:00 AM',
+  '10:00 AM - 11:00 AM',
+  '11:00 AM - 12:00 PM',
+  '12:00 PM - 1:00 PM',
+  '1:00 PM - 2:00 PM',
+  '2:00 PM - 3:00 PM',
+  '3:00 PM - 4:00 PM',
+  '4:00 PM - 5:00 PM',
+  '5:00 PM - 6:00 PM',
+  '6:00 PM - 7:00 PM',
+];
+
+export const notificationTemplatesList = [
+  { id: 'order_confirmed', name: 'Order Confirmed', subject: 'Your order {{orderId}} is confirmed', body: 'Hello {{customerName}}, your order {{orderId}} has been confirmed and will be picked up on {{pickupDate}}.' },
+  { id: 'order_scheduled', name: 'Order Scheduled', subject: 'Pickup Scheduled - {{orderId}}', body: 'Hello {{customerName}}, your order {{orderId}} is scheduled for pickup on {{pickupDate}} at {{pickupSlot}}.' },
+  { id: 'order_completed', name: 'Order Completed', subject: 'Order Completed - {{orderId}}', body: 'Hello {{customerName}}, your order {{orderId}} has been completed. Total amount: ₹{{amount}}.' },
+  { id: 'order_cancelled', name: 'Order Cancelled', subject: 'Order Cancelled - {{orderId}}', body: 'Hello {{customerName}}, your order {{orderId}} has been cancelled. Reason: {{reason}}.' },
+  { id: 'payment_received', name: 'Payment Received', subject: 'Payment Received - ₹{{amount}}', body: 'Hello {{customerName}}, we have received your payment of ₹{{amount}} for order {{orderId}}.' },
+  { id: 'service_reminder', name: 'Service Reminder', subject: 'Scrap Pickup Reminder', body: 'Hello {{customerName}}, it has been a while since your last pickup. Schedule a new pickup today!' },
+  { id: 'promotional_offer', name: 'Promotional Offer', subject: 'Special Offer Just For You!', body: 'Hello {{customerName}}, enjoy special rates on scrap pickup this week. Book now!' },
+  { id: 'feedback_request', name: 'Feedback Request', subject: 'How was your experience?', body: 'Hello {{customerName}}, please take a moment to rate your recent pickup experience.' },
 ];

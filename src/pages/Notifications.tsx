@@ -12,14 +12,18 @@ import {
   Eye,
   Users,
   User,
+  CheckCircle,
+  Copy,
 } from 'lucide-react';
 import { AdminLayout } from '@/components/layout/AdminLayout';
+import { PageHeader } from '@/components/layout/PageHeader';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Switch } from '@/components/ui/switch';
 import {
   Table,
   TableBody,
@@ -49,7 +53,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { mockNotifications, mockNotificationTemplates, mockPartners, mockCustomers } from '@/data/mockData';
+import { mockNotifications, mockNotificationTemplates, mockPartners, mockCustomers, notificationTemplatesList } from '@/data/mockData';
 import { toast } from 'sonner';
 import { format } from 'date-fns';
 import { cn } from '@/lib/utils';
@@ -61,11 +65,30 @@ export default function Notifications() {
   const [selectedRecipient, setSelectedRecipient] = useState('');
   const [notificationTitle, setNotificationTitle] = useState('');
   const [notificationMessage, setNotificationMessage] = useState('');
+  const [broadcastToAll, setBroadcastToAll] = useState(false);
+  const [selectedTemplate, setSelectedTemplate] = useState('');
+  const [previewDialog, setPreviewDialog] = useState<{ open: boolean; template: any }>({ open: false, template: null });
+  const [editTemplateDialog, setEditTemplateDialog] = useState<{ open: boolean; template: any }>({ open: false, template: null });
+  const [templates, setTemplates] = useState(mockNotificationTemplates);
+  const [addTemplateDialog, setAddTemplateDialog] = useState(false);
+  const [newTemplate, setNewTemplate] = useState({ name: '', subject: '', body: '', type: 'custom' as const });
 
   const sentNotifications = mockNotifications.filter(n => n.recipientType !== 'admin');
   const receivedNotifications = mockNotifications.filter(n => n.recipientType === 'admin');
 
   const handleSendNotification = () => {
+    if (broadcastToAll) {
+      if (notificationTitle && notificationMessage) {
+        const count = recipientType === 'partner' ? mockPartners.length : mockCustomers.length;
+        toast.success(`Notification sent to all ${count} ${recipientType}s`);
+        setSendDialog(false);
+        setBroadcastToAll(false);
+        setNotificationTitle('');
+        setNotificationMessage('');
+      }
+      return;
+    }
+    
     if (selectedRecipient && notificationTitle && notificationMessage) {
       toast.success('Notification sent successfully');
       setSendDialog(false);
@@ -73,6 +96,45 @@ export default function Notifications() {
       setNotificationTitle('');
       setNotificationMessage('');
     }
+  };
+
+  const handleUseTemplate = (templateId: string) => {
+    const template = notificationTemplatesList.find(t => t.id === templateId);
+    if (template) {
+      setNotificationTitle(template.subject);
+      setNotificationMessage(template.body);
+      setSelectedTemplate(templateId);
+    }
+  };
+
+  const handleSaveTemplate = () => {
+    if (editTemplateDialog.template) {
+      setTemplates(prev => prev.map(t => 
+        t.id === editTemplateDialog.template.id ? { ...t, ...editTemplateDialog.template } : t
+      ));
+      toast.success('Template updated');
+      setEditTemplateDialog({ open: false, template: null });
+    }
+  };
+
+  const handleAddTemplate = () => {
+    if (!newTemplate.name || !newTemplate.subject || !newTemplate.body) {
+      toast.error('Please fill all fields');
+      return;
+    }
+    const template = {
+      id: `KM25${String(Math.floor(Math.random() * 9999)).padStart(4, '0')}`,
+      name: newTemplate.name,
+      type: newTemplate.type,
+      subject: newTemplate.subject,
+      body: newTemplate.body,
+      variables: [],
+      isActive: true,
+    };
+    setTemplates(prev => [...prev, template]);
+    toast.success('Template added');
+    setAddTemplateDialog(false);
+    setNewTemplate({ name: '', subject: '', body: '', type: 'custom' });
   };
 
   const statusColors = {
@@ -85,16 +147,17 @@ export default function Notifications() {
   return (
     <AdminLayout onLogout={() => navigate('/login')}>
       <div className="space-y-6">
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-2xl font-bold">Notifications</h1>
-            <p className="text-muted-foreground">Manage alerts and communications</p>
-          </div>
-          <Button onClick={() => setSendDialog(true)}>
-            <Send className="mr-2 h-4 w-4" />
-            Send Notification
-          </Button>
-        </div>
+        <PageHeader
+          title="Notifications"
+          description="Manage alerts and communications"
+          breadcrumbs={[{ label: 'Notifications' }]}
+          actions={
+            <Button onClick={() => setSendDialog(true)}>
+              <Send className="mr-2 h-4 w-4" />
+              Send Notification
+            </Button>
+          }
+        />
 
         <Tabs defaultValue="sent">
           <TabsList>
@@ -243,7 +306,7 @@ export default function Notifications() {
                       Predefined templates for common notifications
                     </CardDescription>
                   </div>
-                  <Button variant="outline">
+                  <Button variant="outline" onClick={() => setAddTemplateDialog(true)}>
                     <Plus className="mr-2 h-4 w-4" />
                     Add Template
                   </Button>
@@ -262,7 +325,7 @@ export default function Notifications() {
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {mockNotificationTemplates.map((template) => (
+                    {templates.map((template) => (
                       <TableRow key={template.id}>
                         <TableCell className="font-medium">{template.name}</TableCell>
                         <TableCell>
@@ -303,11 +366,18 @@ export default function Notifications() {
                               </Button>
                             </DropdownMenuTrigger>
                             <DropdownMenuContent align="end">
-                              <DropdownMenuItem>
+                              <DropdownMenuItem onClick={() => setPreviewDialog({ open: true, template })}>
                                 <Eye className="mr-2 h-4 w-4" /> Preview
                               </DropdownMenuItem>
-                              <DropdownMenuItem>
+                              <DropdownMenuItem onClick={() => setEditTemplateDialog({ open: true, template: { ...template } })}>
                                 <Edit className="mr-2 h-4 w-4" /> Edit
+                              </DropdownMenuItem>
+                              <DropdownMenuItem onClick={() => {
+                                setNotificationTitle(template.subject);
+                                setNotificationMessage(template.body);
+                                setSendDialog(true);
+                              }}>
+                                <Copy className="mr-2 h-4 w-4" /> Use Template
                               </DropdownMenuItem>
                               <DropdownMenuItem className="text-destructive">
                                 <Trash2 className="mr-2 h-4 w-4" /> Delete
@@ -335,11 +405,27 @@ export default function Notifications() {
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4 py-4">
+            {/* Quick Templates */}
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Quick Template</label>
+              <Select value={selectedTemplate} onValueChange={handleUseTemplate}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Select a template" />
+                </SelectTrigger>
+                <SelectContent>
+                  {notificationTemplatesList.map((t) => (
+                    <SelectItem key={t.id} value={t.id}>{t.name}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
             <div className="space-y-2">
               <label className="text-sm font-medium">Recipient Type</label>
               <Select value={recipientType} onValueChange={(v: 'partner' | 'customer') => {
                 setRecipientType(v);
                 setSelectedRecipient('');
+                setBroadcastToAll(false);
               }}>
                 <SelectTrigger>
                   <SelectValue />
@@ -351,6 +437,17 @@ export default function Notifications() {
               </Select>
             </div>
 
+            <div className="flex items-center justify-between p-3 rounded-lg bg-muted/50">
+              <div className="flex items-center gap-2">
+                <Users className="h-4 w-4" />
+                <span className="text-sm font-medium">
+                  Broadcast to all {recipientType}s ({recipientType === 'partner' ? mockPartners.length : mockCustomers.length})
+                </span>
+              </div>
+              <Switch checked={broadcastToAll} onCheckedChange={setBroadcastToAll} />
+            </div>
+
+            {!broadcastToAll && (
             <div className="space-y-2">
               <label className="text-sm font-medium">Select {recipientType}</label>
               <Select value={selectedRecipient} onValueChange={setSelectedRecipient}>
@@ -369,6 +466,7 @@ export default function Notifications() {
                 </SelectContent>
               </Select>
             </div>
+            )}
 
             <div className="space-y-2">
               <label className="text-sm font-medium">Title</label>
@@ -395,11 +493,140 @@ export default function Notifications() {
             </Button>
             <Button
               onClick={handleSendNotification}
-              disabled={!selectedRecipient || !notificationTitle || !notificationMessage}
+              disabled={(!broadcastToAll && !selectedRecipient) || !notificationTitle || !notificationMessage}
             >
               <Send className="mr-2 h-4 w-4" />
-              Send
+              {broadcastToAll ? 'Broadcast' : 'Send'}
             </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Preview Template Dialog */}
+      <Dialog open={previewDialog.open} onOpenChange={(open) => setPreviewDialog({ open, template: null })}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Template Preview - {previewDialog.template?.name}</DialogTitle>
+          </DialogHeader>
+          {previewDialog.template && (
+            <div className="space-y-4 py-4">
+              <div className="space-y-2">
+                <label className="text-sm font-medium text-muted-foreground">Subject</label>
+                <p className="p-3 bg-muted rounded-lg">{previewDialog.template.subject}</p>
+              </div>
+              <div className="space-y-2">
+                <label className="text-sm font-medium text-muted-foreground">Body</label>
+                <p className="p-3 bg-muted rounded-lg whitespace-pre-wrap">{previewDialog.template.body}</p>
+              </div>
+              {previewDialog.template.variables?.length > 0 && (
+                <div className="space-y-2">
+                  <label className="text-sm font-medium text-muted-foreground">Variables</label>
+                  <div className="flex flex-wrap gap-2">
+                    {previewDialog.template.variables.map((v: string) => (
+                      <Badge key={v} variant="outline">{`{{${v}}}`}</Badge>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setPreviewDialog({ open: false, template: null })}>Close</Button>
+            <Button onClick={() => {
+              setNotificationTitle(previewDialog.template.subject);
+              setNotificationMessage(previewDialog.template.body);
+              setPreviewDialog({ open: false, template: null });
+              setSendDialog(true);
+            }}>
+              <Copy className="mr-2 h-4 w-4" />
+              Use Template
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Edit Template Dialog */}
+      <Dialog open={editTemplateDialog.open} onOpenChange={(open) => setEditTemplateDialog({ open, template: null })}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Edit Template</DialogTitle>
+          </DialogHeader>
+          {editTemplateDialog.template && (
+            <div className="space-y-4 py-4">
+              <div className="space-y-2">
+                <label className="text-sm font-medium">Name</label>
+                <Input
+                  value={editTemplateDialog.template.name}
+                  onChange={(e) => setEditTemplateDialog(prev => ({ ...prev, template: { ...prev.template, name: e.target.value } }))}
+                />
+              </div>
+              <div className="space-y-2">
+                <label className="text-sm font-medium">Subject</label>
+                <Input
+                  value={editTemplateDialog.template.subject}
+                  onChange={(e) => setEditTemplateDialog(prev => ({ ...prev, template: { ...prev.template, subject: e.target.value } }))}
+                />
+              </div>
+              <div className="space-y-2">
+                <label className="text-sm font-medium">Body</label>
+                <Textarea
+                  value={editTemplateDialog.template.body}
+                  onChange={(e) => setEditTemplateDialog(prev => ({ ...prev, template: { ...prev.template, body: e.target.value } }))}
+                  rows={4}
+                />
+              </div>
+              <div className="flex items-center gap-2">
+                <Switch
+                  checked={editTemplateDialog.template.isActive}
+                  onCheckedChange={(v) => setEditTemplateDialog(prev => ({ ...prev, template: { ...prev.template, isActive: v } }))}
+                />
+                <label className="text-sm">Active</label>
+              </div>
+            </div>
+          )}
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setEditTemplateDialog({ open: false, template: null })}>Cancel</Button>
+            <Button onClick={handleSaveTemplate}>Save Changes</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Add Template Dialog */}
+      <Dialog open={addTemplateDialog} onOpenChange={setAddTemplateDialog}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Add New Template</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Name</label>
+              <Input
+                value={newTemplate.name}
+                onChange={(e) => setNewTemplate(prev => ({ ...prev, name: e.target.value }))}
+                placeholder="Template name"
+              />
+            </div>
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Subject</label>
+              <Input
+                value={newTemplate.subject}
+                onChange={(e) => setNewTemplate(prev => ({ ...prev, subject: e.target.value }))}
+                placeholder="Notification subject"
+              />
+            </div>
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Body</label>
+              <Textarea
+                value={newTemplate.body}
+                onChange={(e) => setNewTemplate(prev => ({ ...prev, body: e.target.value }))}
+                placeholder="Notification body..."
+                rows={4}
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setAddTemplateDialog(false)}>Cancel</Button>
+            <Button onClick={handleAddTemplate}>Add Template</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Plus, Calendar, MapPin, User, Package } from 'lucide-react';
+import { Plus, Calendar, MapPin, User, Package, UserPlus } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
@@ -34,7 +34,8 @@ export function CreateOrderDialog({ onOrderCreated, trigger }: CreateOrderDialog
     customerId: '',
     customerName: '',
     customerPhone: '',
-    city: 'Bangalore',
+    customerEmail: '',
+    city: '',
     area: '',
     address: '',
     pickupDate: new Date().toISOString().split('T')[0],
@@ -43,6 +44,7 @@ export function CreateOrderDialog({ onOrderCreated, trigger }: CreateOrderDialog
     description: '',
   });
   const [isNewCustomer, setIsNewCustomer] = useState(false);
+  const [customArea, setCustomArea] = useState('');
 
   const handleCustomerSelect = (customerId: string) => {
     if (customerId === 'new') {
@@ -52,9 +54,12 @@ export function CreateOrderDialog({ onOrderCreated, trigger }: CreateOrderDialog
         customerId: '',
         customerName: '',
         customerPhone: '',
+        customerEmail: '',
+        city: '',
         area: '',
         address: '',
       });
+      setCustomArea('');
     } else {
       const customer = mockCustomers.find(c => c.id === customerId);
       if (customer) {
@@ -64,16 +69,19 @@ export function CreateOrderDialog({ onOrderCreated, trigger }: CreateOrderDialog
           customerId: customer.id,
           customerName: customer.name,
           customerPhone: customer.phone,
+          customerEmail: customer.email || '',
           city: customer.city,
           area: customer.area,
           address: customer.address,
         });
+        setCustomArea(customer.area);
       }
     }
   };
 
   const handleSubmit = () => {
-    if (!formData.customerName || !formData.customerPhone || !formData.area || !formData.pickupSlot || !formData.scrapCategory) {
+    const finalArea = customArea || formData.area;
+    if (!formData.customerName || !formData.customerPhone || !finalArea || !formData.pickupSlot || !formData.scrapCategory || !formData.city) {
       toast.error('Please fill all required fields');
       return;
     }
@@ -85,7 +93,7 @@ export function CreateOrderDialog({ onOrderCreated, trigger }: CreateOrderDialog
       customerName: formData.customerName,
       customerPhone: formData.customerPhone,
       city: formData.city,
-      area: formData.area,
+      area: finalArea,
       address: formData.address,
       pickupDate: new Date(formData.pickupDate),
       pickupSlot: formData.pickupSlot,
@@ -105,7 +113,8 @@ export function CreateOrderDialog({ onOrderCreated, trigger }: CreateOrderDialog
       customerId: '',
       customerName: '',
       customerPhone: '',
-      city: 'Bangalore',
+      customerEmail: '',
+      city: '',
       area: '',
       address: '',
       pickupDate: new Date().toISOString().split('T')[0],
@@ -114,6 +123,7 @@ export function CreateOrderDialog({ onOrderCreated, trigger }: CreateOrderDialog
       description: '',
     });
     setIsNewCustomer(false);
+    setCustomArea('');
   };
 
   const areas = areasByCity[formData.city] || [];
@@ -144,14 +154,19 @@ export function CreateOrderDialog({ onOrderCreated, trigger }: CreateOrderDialog
           <div className="space-y-2">
             <label className="text-sm font-medium flex items-center gap-2">
               <User className="h-4 w-4" />
-              Customer
+              Customer *
             </label>
             <Select onValueChange={handleCustomerSelect}>
               <SelectTrigger>
                 <SelectValue placeholder="Select existing or add new" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="new">+ Add New Customer</SelectItem>
+                <SelectItem value="new">
+                  <span className="flex items-center gap-2">
+                    <UserPlus className="h-4 w-4" />
+                    + Add New Customer
+                  </span>
+                </SelectItem>
                 {mockCustomers.map((customer) => (
                   <SelectItem key={customer.id} value={customer.id}>
                     {customer.name} - {customer.phone}
@@ -163,7 +178,11 @@ export function CreateOrderDialog({ onOrderCreated, trigger }: CreateOrderDialog
 
           {/* Customer Details */}
           {isNewCustomer && (
-            <>
+            <div className="space-y-4 p-4 border rounded-lg bg-muted/30">
+              <h4 className="text-sm font-semibold flex items-center gap-2">
+                <UserPlus className="h-4 w-4" />
+                New Customer Details
+              </h4>
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <label className="text-sm font-medium">Name *</label>
@@ -182,22 +201,31 @@ export function CreateOrderDialog({ onOrderCreated, trigger }: CreateOrderDialog
                   />
                 </div>
               </div>
-            </>
+              <div className="space-y-2">
+                <label className="text-sm font-medium">Email</label>
+                <Input
+                  value={formData.customerEmail}
+                  onChange={(e) => setFormData({ ...formData, customerEmail: e.target.value })}
+                  placeholder="customer@email.com"
+                  type="email"
+                />
+              </div>
+            </div>
           )}
 
           {/* Location */}
           <div className="space-y-2">
             <label className="text-sm font-medium flex items-center gap-2">
               <MapPin className="h-4 w-4" />
-              Location
+              Location *
             </label>
             <div className="grid grid-cols-2 gap-4">
               <Select
                 value={formData.city}
-                onValueChange={(v) => setFormData({ ...formData, city: v, area: '' })}
+                onValueChange={(v) => { setFormData({ ...formData, city: v, area: '' }); setCustomArea(''); }}
               >
                 <SelectTrigger>
-                  <SelectValue placeholder="City" />
+                  <SelectValue placeholder="Select City *" />
                 </SelectTrigger>
                 <SelectContent>
                   {cities.map((city) => (
@@ -205,19 +233,19 @@ export function CreateOrderDialog({ onOrderCreated, trigger }: CreateOrderDialog
                   ))}
                 </SelectContent>
               </Select>
-              <Select
-                value={formData.area}
-                onValueChange={(v) => setFormData({ ...formData, area: v })}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Area *" />
-                </SelectTrigger>
-                <SelectContent>
+              <div className="space-y-2">
+                <Input
+                  value={customArea}
+                  onChange={(e) => setCustomArea(e.target.value)}
+                  placeholder="Type area or select below"
+                  list="area-suggestions"
+                />
+                <datalist id="area-suggestions">
                   {areas.map((area) => (
-                    <SelectItem key={area} value={area}>{area}</SelectItem>
+                    <option key={area} value={area} />
                   ))}
-                </SelectContent>
-              </Select>
+                </datalist>
+              </div>
             </div>
             <Input
               value={formData.address}

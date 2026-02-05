@@ -8,6 +8,7 @@ import {
   CheckCircle,
   XCircle,
   Eye,
+  Calendar,
 } from 'lucide-react';
 import { AdminLayout } from '@/components/layout/AdminLayout';
 import { PageHeader } from '@/components/layout/PageHeader';
@@ -36,14 +37,18 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
-import { mockProcessedInvoices } from '@/data/mockData';
+import { mockProcessedInvoices, mockCustomers } from '@/data/mockData';
 import { ProcessedInvoice } from '@/types';
-import { format } from 'date-fns';
+import { format, isWithinInterval, startOfDay, endOfDay } from 'date-fns';
+import { toast } from 'sonner';
 
 export default function Invoices() {
   const navigate = useNavigate();
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState<'all' | 'approved' | 'rejected'>('all');
+  const [customerFilter, setCustomerFilter] = useState('all');
+  const [fromDate, setFromDate] = useState('');
+  const [toDate, setToDate] = useState('');
   const [selectedInvoice, setSelectedInvoice] = useState<ProcessedInvoice | null>(null);
   const [invoiceDialogOpen, setInvoiceDialogOpen] = useState(false);
 
@@ -53,8 +58,58 @@ export default function Invoices() {
       invoice.customerName.toLowerCase().includes(searchQuery.toLowerCase()) ||
       invoice.partnerName.toLowerCase().includes(searchQuery.toLowerCase());
     const matchesStatus = statusFilter === 'all' || invoice.status === statusFilter;
-    return matchesSearch && matchesStatus;
+    const matchesCustomer = customerFilter === 'all' || invoice.customerName === customerFilter;
+    
+    // Date filtering
+    let matchesDate = true;
+    if (fromDate || toDate) {
+      const invoiceDate = invoice.processedAt;
+      if (fromDate && toDate) {
+        matchesDate = isWithinInterval(invoiceDate, {
+          start: startOfDay(new Date(fromDate)),
+          end: endOfDay(new Date(toDate)),
+        });
+      } else if (fromDate) {
+        matchesDate = invoiceDate >= startOfDay(new Date(fromDate));
+      } else if (toDate) {
+        matchesDate = invoiceDate <= endOfDay(new Date(toDate));
+      }
+    }
+    
+    return matchesSearch && matchesStatus && matchesCustomer && matchesDate;
   });
+
+  const handleDownloadPDF = (invoice: ProcessedInvoice) => {
+    // Generate PDF content
+    const pdfContent = `
+INVOICE: ${invoice.id}
+Order ID: ${invoice.orderId}
+Customer: ${invoice.customerName}
+Partner: ${invoice.partnerName}
+Status: ${invoice.status.toUpperCase()}
+Processed At: ${format(invoice.processedAt, 'MMM dd, yyyy HH:mm')}
+
+CUSTOMER INVOICE
+----------------
+${invoice.customerInvoice.items.map(item => `${item.materialName}: ${item.quantity} ${item.unit} x ₹${item.rate} = ₹${item.total}`).join('\n')}
+Total: ₹${invoice.customerInvoice.total}
+
+PARTNER INVOICE
+---------------
+${invoice.partnerInvoice.items.map(item => `${item.materialName}: ${item.quantity} ${item.unit} x ₹${item.rate} = ₹${item.total}`).join('\n')}
+Total: ₹${invoice.partnerInvoice.total}
+
+COMMISSION: ₹${invoice.commission}
+    `.trim();
+    
+    const blob = new Blob([pdfContent], { type: 'text/plain' });
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `invoice-${invoice.id}.txt`;
+    a.click();
+    toast.success(`Invoice ${invoice.id} downloaded`);
+  };
 
   const approvedCount = mockProcessedInvoices.filter(i => i.status === 'approved').length;
   const rejectedCount = mockProcessedInvoices.filter(i => i.status === 'rejected').length;
@@ -163,6 +218,22 @@ export default function Invoices() {
                   className="pl-9"
                 />
               </div>
+              <div className="flex items-center gap-2">
+                <Calendar className="h-4 w-4 text-muted-foreground" />
+                <Input
+                  type="date"
+                  value={fromDate}
+                  onChange={(e) => setFromDate(e.target.value)}
+                  className="w-[150px]"
+                />
+                <span className="text-muted-foreground">to</span>
+                <Input
+                  type="date"
+                  value={toDate}
+                  onChange={(e) => setToDate(e.target.value)}
+                  className="w-[150px]"
+                />
+              </div>
               <Select value={statusFilter} onValueChange={(v) => setStatusFilter(v as 'all' | 'approved' | 'rejected')}>
                 <SelectTrigger className="w-[160px]">
                   <Filter className="mr-2 h-4 w-4" />
@@ -172,6 +243,19 @@ export default function Invoices() {
                   <SelectItem value="all">All Status</SelectItem>
                   <SelectItem value="approved">Approved</SelectItem>
                   <SelectItem value="rejected">Rejected</SelectItem>
+                </SelectContent>
+              </Select>
+              <Select value={customerFilter} onValueChange={setCustomerFilter}>
+                <SelectTrigger className="w-[180px]">
+                  <SelectValue placeholder="Customer" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Customers</SelectItem>
+                  {mockCustomers.map((customer) => (
+                    <SelectItem key={customer.id} value={customer.name}>
+                      {customer.name}
+                    </SelectItem>
+                  ))}
                 </SelectContent>
               </Select>
             </div>
@@ -228,13 +312,24 @@ export default function Invoices() {
                         {format(invoice.processedAt, 'MMM dd, HH:mm')}
                       </TableCell>
                       <TableCell className="text-right">
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          onClick={() => handleViewInvoice(invoice)}
-                        >
-                          <Eye className="h-4 w-4" />
-                        </Button>
+                        <div className="flex justify-end gap-1">
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => handleViewInvoice(invoice)}
+                            title="View Details"
+                          >
+                            <Eye className="h-4 w-4" />
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => handleDownloadPDF(invoice)}
+                            title="Download PDF"
+                          >
+                            <Download className="h-4 w-4" />
+                          </Button>
+                        </div>
                       </TableCell>
                     </TableRow>
                   ))
