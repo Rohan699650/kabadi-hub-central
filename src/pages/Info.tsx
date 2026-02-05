@@ -14,6 +14,7 @@ import {
   Smartphone,
 } from 'lucide-react';
 import { AdminLayout } from '@/components/layout/AdminLayout';
+import { PageHeader } from '@/components/layout/PageHeader';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
@@ -82,10 +83,11 @@ export default function Info() {
   return (
     <AdminLayout onLogout={() => navigate('/login')}>
       <div className="space-y-6">
-        <div>
-          <h1 className="text-2xl font-bold">Platform Information</h1>
-          <p className="text-muted-foreground">SOPs, documentation, and technical details</p>
-        </div>
+        <PageHeader
+          title="Platform Information"
+          description="SOPs, documentation, and technical details"
+          breadcrumbs={[{ label: 'Info' }]}
+        />
 
         <Tabs defaultValue="overview">
           <TabsList>

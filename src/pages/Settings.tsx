@@ -12,6 +12,7 @@ import {
   Save,
 } from 'lucide-react';
 import { AdminLayout } from '@/components/layout/AdminLayout';
+import { PageHeader } from '@/components/layout/PageHeader';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
@@ -83,10 +84,11 @@ export default function Settings() {
   return (
     <AdminLayout onLogout={() => navigate('/login')}>
       <div className="space-y-6">
-        <div>
-          <h1 className="text-2xl font-bold">Settings</h1>
-          <p className="text-muted-foreground">Configure platform and security settings</p>
-        </div>
+        <PageHeader
+          title="Settings"
+          description="Configure platform and security settings"
+          breadcrumbs={[{ label: 'Settings' }]}
+        />
 
         <div className="grid gap-6 lg:grid-cols-2">
           {/* Platform Configuration */}

@@ -4,12 +4,12 @@ import {
   Package,
   CheckCircle,
   XCircle,
-  Users,
   Download,
   Search,
   Filter,
   Eye,
   FileText,
+  Calendar,
 } from 'lucide-react';
 import { AdminLayout } from '@/components/layout/AdminLayout';
 import { PageHeader } from '@/components/layout/PageHeader';
@@ -37,7 +37,7 @@ import {
 import { mockOrders, mockPartners, areasByCity } from '@/data/mockData';
 import { Order, OrderStatus } from '@/types';
 import { PieChart, Pie, Cell, ResponsiveContainer, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend } from 'recharts';
-import { format } from 'date-fns';
+import { format, isWithinInterval, parseISO, startOfDay, endOfDay } from 'date-fns';
 
 const statusOptions: { value: OrderStatus | 'all'; label: string }[] = [
   { value: 'all', label: 'All Statuses' },
@@ -57,6 +57,8 @@ export default function ViewAllOrders() {
   const [statusFilter, setStatusFilter] = useState<OrderStatus | 'all'>('all');
   const [areaFilter, setAreaFilter] = useState('All Areas');
   const [partnerFilter, setPartnerFilter] = useState('all');
+  const [fromDate, setFromDate] = useState('');
+  const [toDate, setToDate] = useState('');
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
   const [orderDialogOpen, setOrderDialogOpen] = useState(false);
 
@@ -68,14 +70,29 @@ export default function ViewAllOrders() {
     const matchesStatus = statusFilter === 'all' || order.status === statusFilter;
     const matchesArea = areaFilter === 'All Areas' || order.area === areaFilter;
     const matchesPartner = partnerFilter === 'all' || order.partnerId === partnerFilter;
+    
+    // Date filtering
+    let matchesDate = true;
+    if (fromDate || toDate) {
+      const orderDate = order.createdAt;
+      if (fromDate && toDate) {
+        matchesDate = isWithinInterval(orderDate, {
+          start: startOfDay(new Date(fromDate)),
+          end: endOfDay(new Date(toDate)),
+        });
+      } else if (fromDate) {
+        matchesDate = orderDate >= startOfDay(new Date(fromDate));
+      } else if (toDate) {
+        matchesDate = orderDate <= endOfDay(new Date(toDate));
+      }
+    }
 
-    return matchesSearch && matchesStatus && matchesArea && matchesPartner;
+    return matchesSearch && matchesStatus && matchesArea && matchesPartner && matchesDate;
   });
 
   const totalOrders = mockOrders.length;
   const completedOrders = mockOrders.filter(o => o.status === 'completed').length;
   const cancelledOrders = mockOrders.filter(o => o.status === 'cancelled').length;
-  const repeatCustomers = new Set(mockOrders.map(o => o.customerId)).size;
 
   // Pie chart for Completed vs Cancelled only
   const pieData = [
@@ -160,11 +177,10 @@ export default function ViewAllOrders() {
         />
 
         {/* KPI Cards */}
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        <div className="grid gap-4 sm:grid-cols-3">
           <KPICard title="Total Orders" value={totalOrders} icon={Package} />
           <KPICard title="Completed" value={completedOrders} icon={CheckCircle} variant="success" />
           <KPICard title="Cancelled" value={cancelledOrders} icon={XCircle} variant="destructive" />
-          <KPICard title="Unique Customers" value={repeatCustomers} icon={Users} variant="info" />
         </div>
 
         {/* Charts */}
@@ -231,6 +247,24 @@ export default function ViewAllOrders() {
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                   className="pl-9"
+                />
+              </div>
+              <div className="flex items-center gap-2">
+                <Calendar className="h-4 w-4 text-muted-foreground" />
+                <Input
+                  type="date"
+                  value={fromDate}
+                  onChange={(e) => setFromDate(e.target.value)}
+                  className="w-[150px]"
+                  placeholder="From Date"
+                />
+                <span className="text-muted-foreground">to</span>
+                <Input
+                  type="date"
+                  value={toDate}
+                  onChange={(e) => setToDate(e.target.value)}
+                  className="w-[150px]"
+                  placeholder="To Date"
                 />
               </div>
               <Select value={statusFilter} onValueChange={(v) => setStatusFilter(v as OrderStatus | 'all')}>

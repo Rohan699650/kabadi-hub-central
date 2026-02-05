@@ -9,10 +9,13 @@ import {
   MoreHorizontal,
   Check,
   X,
+  Image,
 } from 'lucide-react';
 import { AdminLayout } from '@/components/layout/AdminLayout';
+import { PageHeader } from '@/components/layout/PageHeader';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Switch } from '@/components/ui/switch';
@@ -57,7 +60,49 @@ export default function Pricing() {
   const [editingMaterial, setEditingMaterial] = useState<Material | null>(null);
   const [editDialog, setEditDialog] = useState(false);
   const [editRate, setEditRate] = useState('');
+  const [addMaterialDialog, setAddMaterialDialog] = useState(false);
+  const [newMaterial, setNewMaterial] = useState({
+    name: '',
+    category: '',
+    unit: 'kg',
+    customerRate: '',
+    description: '',
+    imageUrl: '',
+  });
   const [selectedPartner, setSelectedPartner] = useState(mockPartners[0]?.id || '');
+  const handleAddMaterial = () => {
+    if (!newMaterial.name || !newMaterial.customerRate) {
+      toast.error('Please fill required fields');
+      return;
+    }
+    const newMat: Material = {
+      id: `KM25${String(Math.floor(Math.random() * 9999)).padStart(4, '0')}`,
+      name: newMaterial.name,
+      category: newMaterial.category || 'Other',
+      unit: newMaterial.unit,
+      customerRate: Number(newMaterial.customerRate),
+      isActive: true,
+      updatedAt: new Date(),
+      updatedBy: 'Admin',
+    };
+    setMaterials(prev => [...prev, newMat]);
+    toast.success(`${newMaterial.name} added successfully`);
+    setAddMaterialDialog(false);
+    setNewMaterial({
+      name: '',
+      category: '',
+      unit: 'kg',
+      customerRate: '',
+      description: '',
+      imageUrl: '',
+    });
+  };
+
+  const handleDeleteMaterial = (materialId: string) => {
+    setMaterials(prev => prev.filter(m => m.id !== materialId));
+    toast.success('Material deleted');
+  };
+
   const [partnerEditDialog, setPartnerEditDialog] = useState(false);
   const [partnerEditMaterial, setPartnerEditMaterial] = useState<{ materialId: string; rate: number } | null>(null);
   const [partnerEditRate, setPartnerEditRate] = useState('');
@@ -156,10 +201,11 @@ export default function Pricing() {
   return (
     <AdminLayout onLogout={() => navigate('/login')}>
       <div className="space-y-6">
-        <div>
-          <h1 className="text-2xl font-bold">Pricing Management</h1>
-          <p className="text-muted-foreground">Configure customer and partner rates</p>
-        </div>
+        <PageHeader
+          title="Pricing Management"
+          description="Configure customer and partner rates"
+          breadcrumbs={[{ label: 'Pricing' }]}
+        />
 
         <Tabs defaultValue="customer">
           <TabsList className="grid w-full max-w-md grid-cols-2">
@@ -181,10 +227,16 @@ export default function Pricing() {
                       Global rates applicable to all customers
                     </CardDescription>
                   </div>
-                  <Button onClick={handleExportCustomerCSV}>
-                    <Download className="mr-2 h-4 w-4" />
-                    Export CSV
-                  </Button>
+                  <div className="flex gap-2">
+                    <Button onClick={() => setAddMaterialDialog(true)}>
+                      <Plus className="mr-2 h-4 w-4" />
+                      Add New Item
+                    </Button>
+                    <Button variant="outline" onClick={handleExportCustomerCSV}>
+                      <Download className="mr-2 h-4 w-4" />
+                      Export CSV
+                    </Button>
+                  </div>
                 </div>
               </CardHeader>
               <CardContent>
@@ -235,7 +287,10 @@ export default function Pricing() {
                               <DropdownMenuItem onClick={() => handleEditCustomerRate(material)}>
                                 <Edit className="mr-2 h-4 w-4" /> Edit Rate
                               </DropdownMenuItem>
-                              <DropdownMenuItem className="text-destructive">
+                              <DropdownMenuItem 
+                                className="text-destructive"
+                                onClick={() => handleDeleteMaterial(material.id)}
+                              >
                                 <Trash2 className="mr-2 h-4 w-4" /> Delete
                               </DropdownMenuItem>
                             </DropdownMenuContent>
@@ -398,6 +453,112 @@ export default function Pricing() {
             </Button>
             <Button onClick={handleSavePartnerRate}>
               Save Changes
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Add Material Dialog */}
+      <Dialog open={addMaterialDialog} onOpenChange={setAddMaterialDialog}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Plus className="h-5 w-5" />
+              Add New Pricing Item
+            </DialogTitle>
+            <DialogDescription>
+              Add a new material with pricing
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <label className="text-sm font-medium">Item Name *</label>
+                <Input
+                  value={newMaterial.name}
+                  onChange={(e) => setNewMaterial({ ...newMaterial, name: e.target.value })}
+                  placeholder="e.g., Copper Wire"
+                />
+              </div>
+              <div className="space-y-2">
+                <label className="text-sm font-medium">Category</label>
+                <Select value={newMaterial.category} onValueChange={(v) => setNewMaterial({ ...newMaterial, category: v })}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select category" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="Metal">Metal</SelectItem>
+                    <SelectItem value="Paper">Paper</SelectItem>
+                    <SelectItem value="Plastic">Plastic</SelectItem>
+                    <SelectItem value="Electronics">Electronics</SelectItem>
+                    <SelectItem value="Glass">Glass</SelectItem>
+                    <SelectItem value="Other">Other</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <label className="text-sm font-medium">Price (₹) *</label>
+                <Input
+                  type="number"
+                  value={newMaterial.customerRate}
+                  onChange={(e) => setNewMaterial({ ...newMaterial, customerRate: e.target.value })}
+                  placeholder="Enter rate"
+                />
+              </div>
+              <div className="space-y-2">
+                <label className="text-sm font-medium">Unit</label>
+                <Select value={newMaterial.unit} onValueChange={(v) => setNewMaterial({ ...newMaterial, unit: v })}>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="kg">kg</SelectItem>
+                    <SelectItem value="piece">piece</SelectItem>
+                    <SelectItem value="gram">gram</SelectItem>
+                    <SelectItem value="unit">unit</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Description</label>
+              <Textarea
+                value={newMaterial.description}
+                onChange={(e) => setNewMaterial({ ...newMaterial, description: e.target.value })}
+                placeholder="Brief description of the item..."
+                rows={2}
+              />
+            </div>
+            <div className="space-y-2">
+              <label className="text-sm font-medium flex items-center gap-2">
+                <Image className="h-4 w-4" />
+                Image URL
+              </label>
+              <Input
+                value={newMaterial.imageUrl}
+                onChange={(e) => setNewMaterial({ ...newMaterial, imageUrl: e.target.value })}
+                placeholder="https://example.com/image.jpg"
+              />
+              {newMaterial.imageUrl && (
+                <div className="mt-2 p-2 border rounded-md">
+                  <img 
+                    src={newMaterial.imageUrl} 
+                    alt="Preview" 
+                    className="max-h-20 object-contain mx-auto"
+                    onError={(e) => (e.currentTarget.src = '/placeholder.svg')}
+                  />
+                </div>
+              )}
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setAddMaterialDialog(false)}>
+              Cancel
+            </Button>
+            <Button onClick={handleAddMaterial}>
+              Add Item
             </Button>
           </DialogFooter>
         </DialogContent>
