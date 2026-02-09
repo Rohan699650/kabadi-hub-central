@@ -34,7 +34,7 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
-import { mockOrders, mockPartners, areasByCity } from '@/data/mockData';
+import { mockPartners, areasByCity } from '@/data/mockData';
 import { Order, OrderStatus } from '@/types';
 import { PieChart, Pie, Cell, ResponsiveContainer, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend } from 'recharts';
 import { format, isWithinInterval, parseISO, startOfDay, endOfDay } from 'date-fns';
@@ -51,6 +51,8 @@ const statusOptions: { value: OrderStatus | 'all'; label: string }[] = [
 
 const areaOptions = ['All Areas', ...areasByCity['Bangalore']];
 
+import { useOrders } from '@/context/OrderContext';
+
 export default function ViewAllOrders() {
   const navigate = useNavigate();
   const [searchQuery, setSearchQuery] = useState('');
@@ -62,7 +64,9 @@ export default function ViewAllOrders() {
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
   const [orderDialogOpen, setOrderDialogOpen] = useState(false);
 
-  const filteredOrders = mockOrders.filter((order) => {
+  const { orders } = useOrders();
+
+  const filteredOrders = orders.filter((order) => {
     const matchesSearch =
       order.id.toLowerCase().includes(searchQuery.toLowerCase()) ||
       order.customerName.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -70,7 +74,7 @@ export default function ViewAllOrders() {
     const matchesStatus = statusFilter === 'all' || order.status === statusFilter;
     const matchesArea = areaFilter === 'All Areas' || order.area === areaFilter;
     const matchesPartner = partnerFilter === 'all' || order.partnerId === partnerFilter;
-    
+
     // Date filtering
     let matchesDate = true;
     if (fromDate || toDate) {
@@ -90,9 +94,9 @@ export default function ViewAllOrders() {
     return matchesSearch && matchesStatus && matchesArea && matchesPartner && matchesDate;
   });
 
-  const totalOrders = mockOrders.length;
-  const completedOrders = mockOrders.filter(o => o.status === 'completed').length;
-  const cancelledOrders = mockOrders.filter(o => o.status === 'cancelled').length;
+  const totalOrders = orders.length;
+  const completedOrders = orders.filter(o => o.status === 'completed').length;
+  const cancelledOrders = orders.filter(o => o.status === 'cancelled').length;
 
   // Pie chart for Completed vs Cancelled only
   const pieData = [
@@ -360,8 +364,8 @@ export default function ViewAllOrders() {
                       {format(order.pickupDate, 'MMM dd')}
                     </TableCell>
                     <TableCell className="text-sm">
-                      {order.completedAt ? format(order.completedAt, 'MMM dd, HH:mm') : 
-                       order.cancelledAt ? format(order.cancelledAt, 'MMM dd, HH:mm') : '-'}
+                      {order.completedAt ? format(order.completedAt, 'MMM dd, HH:mm') :
+                        order.cancelledAt ? format(order.cancelledAt, 'MMM dd, HH:mm') : '-'}
                     </TableCell>
                     <TableCell className="text-right font-mono">
                       {order.customerInvoice ? `₹${order.customerInvoice.total.toLocaleString()}` : '-'}

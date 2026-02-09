@@ -56,10 +56,11 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { Textarea } from '@/components/ui/textarea';
-import { mockOrders, mockPartners, mockDashboardStats } from '@/data/mockData';
+import { mockPartners, mockDashboardStats } from '@/data/mockData';
 import { Order } from '@/types';
 import { toast } from 'sonner';
 import { format } from 'date-fns';
+import { useOrders } from '@/context/OrderContext';
 
 type DashboardView = 'main' | 'new' | 'scheduled' | 'ongoing' | 'completed' | 'cancelled' | 'invoices';
 
@@ -69,24 +70,46 @@ export default function Dashboard() {
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
   const [orderDialogOpen, setOrderDialogOpen] = useState(false);
   const [selectedInvoiceOrder, setSelectedInvoiceOrder] = useState<Order | null>(null);
-  
+
   // Dialog states
   const [assignDialog, setAssignDialog] = useState<{ open: boolean; order: Order | null }>({ open: false, order: null });
   const [cancelDialog, setCancelDialog] = useState<{ open: boolean; order: Order | null }>({ open: false, order: null });
   const [selectedPartnerId, setSelectedPartnerId] = useState('');
   const [cancelReason, setCancelReason] = useState('');
 
-  const newOrders = mockOrders.filter(o => o.status === 'new');
-  const scheduledOrders = mockOrders.filter(o => o.status === 'scheduled');
-  const ongoingOrders = mockOrders.filter(o => ['on-the-way', 'arrived'].includes(o.status));
-  const completedOrders = mockOrders.filter(o => o.status === 'completed');
-  const cancelledOrders = mockOrders.filter(o => o.status === 'cancelled');
-  const pendingInvoiceOrders = mockOrders.filter(o => o.invoiceStatus === 'pending');
+  const { orders, updateOrder } = useOrders();
+
+  const newOrders = orders.filter(o => o.status === 'new');
+  const scheduledOrders = orders.filter(o => o.status === 'scheduled');
+  const ongoingOrders = orders.filter(o => ['on-the-way', 'arrived'].includes(o.status));
+  const completedOrders = orders.filter(o => o.status === 'completed');
+  const cancelledOrders = orders.filter(o => o.status === 'cancelled');
+  const pendingInvoiceOrders = orders.filter(o => o.invoiceStatus === 'pending');
+
+  const stats = {
+    ...mockDashboardStats,
+    newOrdersToday: newOrders.length,
+    scheduledOrdersToday: scheduledOrders.length,
+    ongoingOrdersToday: ongoingOrders.length,
+    completedOrdersToday: completedOrders.length,
+    cancelledOrdersToday: cancelledOrders.length,
+    pendingInvoices: pendingInvoiceOrders.length,
+    todayRevenue: completedOrders.reduce((sum, o) => sum + (o.customerInvoice?.total || 0), 0),
+  };
 
   const handleAssign = () => {
     if (assignDialog.order && selectedPartnerId) {
       const partner = mockPartners.find(p => p.id === selectedPartnerId);
-      toast.success(`Order ${assignDialog.order.id} assigned to ${partner?.name}`);
+      if (partner) {
+        updateOrder(assignDialog.order.id, {
+          status: 'scheduled',
+          partnerId: partner.id,
+          partnerName: partner.name,
+          partnerPhone: partner.phone,
+          partnerStatus: 'assigned'
+        });
+        toast.success(`Order ${assignDialog.order.id} assigned to ${partner.name}`);
+      }
       setAssignDialog({ open: false, order: null });
       setSelectedPartnerId('');
     }
@@ -101,7 +124,13 @@ export default function Dashboard() {
   };
 
   const handleComplete = (orderId: string) => {
+    updateOrder(orderId, { status: 'completed', completedAt: new Date() });
     toast.success(`Order ${orderId} marked as complete`);
+  };
+
+  const handleArrived = (orderId: string) => {
+    updateOrder(orderId, { status: 'on-the-way', otwTimestamp: new Date() });
+    toast.success(`Order ${orderId} marked as On the Way`);
   };
 
   const handleViewOrder = (order: Order) => {
@@ -219,7 +248,7 @@ export default function Dashboard() {
                               <DropdownMenuItem onClick={() => setAssignDialog({ open: true, order })}>
                                 <UserPlus className="mr-2 h-4 w-4" /> Assign Partner
                               </DropdownMenuItem>
-                              <DropdownMenuItem 
+                              <DropdownMenuItem
                                 onClick={() => setCancelDialog({ open: true, order })}
                                 className="text-destructive"
                               >
@@ -320,7 +349,10 @@ export default function Dashboard() {
                               <DropdownMenuItem onClick={() => setAssignDialog({ open: true, order })}>
                                 <UserPlus className="mr-2 h-4 w-4" /> Reassign Partner
                               </DropdownMenuItem>
-                              <DropdownMenuItem 
+                              <DropdownMenuItem onClick={() => handleArrived(order.id)}>
+                                <Truck className="mr-2 h-4 w-4" /> Mark Arrived
+                              </DropdownMenuItem>
+                              <DropdownMenuItem
                                 onClick={() => setCancelDialog({ open: true, order })}
                                 className="text-destructive"
                               >
@@ -417,7 +449,7 @@ export default function Dashboard() {
                               <DropdownMenuItem onClick={() => handleViewOrder(order)}>
                                 <Eye className="mr-2 h-4 w-4" /> View Order
                               </DropdownMenuItem>
-                              <DropdownMenuItem 
+                              <DropdownMenuItem
                                 onClick={() => setCancelDialog({ open: true, order })}
                                 className="text-destructive"
                               >
@@ -642,28 +674,28 @@ export default function Dashboard() {
             <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
               <KPICard
                 title="New Orders Today"
-                value={mockDashboardStats.newOrdersToday}
+                value={stats.newOrdersToday}
                 icon={Package}
                 variant="info"
                 onClick={() => setView('new')}
               />
               <KPICard
                 title="Scheduled Orders"
-                value={mockDashboardStats.scheduledOrdersToday}
+                value={stats.scheduledOrdersToday}
                 icon={Clock}
                 variant="default"
                 onClick={() => setView('scheduled')}
               />
               <KPICard
                 title="Ongoing Orders"
-                value={mockDashboardStats.ongoingOrdersToday}
+                value={stats.ongoingOrdersToday}
                 icon={Truck}
                 variant="warning"
                 onClick={() => setView('ongoing')}
               />
               <KPICard
                 title="Completed Today"
-                value={mockDashboardStats.completedOrdersToday}
+                value={stats.completedOrdersToday}
                 icon={CheckCircle}
                 variant="success"
                 onClick={() => setView('completed')}
@@ -673,28 +705,28 @@ export default function Dashboard() {
             <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
               <KPICard
                 title="Cancelled Today"
-                value={mockDashboardStats.cancelledOrdersToday}
+                value={stats.cancelledOrdersToday}
                 icon={XCircle}
                 variant="destructive"
                 onClick={() => setView('cancelled')}
               />
               <KPICard
                 title="Live Partners"
-                value={mockDashboardStats.livePartners}
+                value={stats.livePartners} // This one remains from mock for now as we don't have partners context
                 icon={Users}
                 variant="success"
                 onClick={() => navigate('/partners')}
               />
               <KPICard
                 title="Pending Invoices"
-                value={mockDashboardStats.pendingInvoices}
+                value={stats.pendingInvoices}
                 icon={FileText}
                 variant="warning"
                 onClick={() => setView('invoices')}
               />
               <KPICard
                 title="Today's Revenue"
-                value={mockDashboardStats.todayRevenue}
+                value={stats.todayRevenue}
                 icon={DollarSign}
                 variant="success"
                 prefix="₹"
@@ -781,7 +813,7 @@ export default function Dashboard() {
   return (
     <AdminLayout onLogout={handleLogout}>
       {renderViewContent()}
-      
+
       <OrderDetailDialog
         order={selectedOrder}
         open={orderDialogOpen}

@@ -21,14 +21,14 @@ import {
 } from '@/components/ui/select';
 import { mockCustomers, cities, areasByCity, scrapCategories, pickupSlots } from '@/data/mockData';
 import { generateOrderId } from '@/types';
-import { toast } from 'sonner';
+import { useOrders } from '@/context/OrderContext';
 
 interface CreateOrderDialogProps {
-  onOrderCreated?: (order: any) => void;
   trigger?: React.ReactNode;
 }
 
-export function CreateOrderDialog({ onOrderCreated, trigger }: CreateOrderDialogProps) {
+export function CreateOrderDialog({ trigger }: CreateOrderDialogProps) {
+  const { addOrder } = useOrders();
   const [open, setOpen] = useState(false);
   const [formData, setFormData] = useState({
     customerId: '',
@@ -106,7 +106,7 @@ export function CreateOrderDialog({ onOrderCreated, trigger }: CreateOrderDialog
       cancellationEligibility: true,
     };
 
-    onOrderCreated?.(newOrder);
+    addOrder(newOrder);
     toast.success(`Order ${newOrder.id} created successfully`);
     setOpen(false);
     setFormData({

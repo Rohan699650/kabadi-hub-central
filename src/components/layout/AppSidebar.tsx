@@ -31,6 +31,7 @@ const menuItems = [
   { title: 'View All Orders', url: '/orders', icon: ClipboardList },
   { title: 'Invoices', url: '/invoices', icon: FileText },
   { title: 'Partners', url: '/partners', icon: Users },
+  { title: 'KPI', url: '/kpi', icon: LayoutDashboard },
   { title: 'Customers', url: '/customers', icon: UserCircle },
   { title: 'Pricing', url: '/pricing', icon: DollarSign },
   { title: 'Notifications', url: '/notifications', icon: Bell },
@@ -77,9 +78,9 @@ export function AppSidebar() {
           <SidebarGroupContent>
             <SidebarMenu>
               {menuItems.map((item) => {
-                const isActive = location.pathname === item.url || 
+                const isActive = location.pathname === item.url ||
                   (item.url !== '/' && location.pathname.startsWith(item.url));
-                
+
                 return (
                   <SidebarMenuItem key={item.title}>
                     <SidebarMenuButton

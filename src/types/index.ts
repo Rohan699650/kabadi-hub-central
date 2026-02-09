@@ -25,9 +25,11 @@ export interface Order {
   cancelledBy?: 'admin' | 'partner' | 'customer';
   orderSource: 'app' | 'web' | 'admin' | 'phone';
   createdBy: string;
-  
+
   // Lifecycle timestamps
   assignedAt?: Date;
+  pricedAt?: Date;
+  confirmedAt?: Date;
   scheduledAt?: Date;
   startedAt?: Date;
   otwTimestamp?: Date;
@@ -36,26 +38,26 @@ export interface Order {
   invoiceApprovedAt?: Date;
   completedAt?: Date;
   cancelledAt?: Date;
-  
+
   // OTP and verification
   arrivalOtp?: string;
   arrivalOtpStatus?: 'generated' | 'verified';
   scrapVerificationPending?: boolean;
-  
+
   // Invoice data
   customerInvoice?: Invoice;
   partnerInvoice?: Invoice;
   invoiceStatus?: 'not-submitted' | 'pending' | 'approved' | 'rejected';
   invoiceRejectionReason?: string;
-  
+
   // Payment
   paymentMode?: 'cash' | 'upi' | 'razorpay';
   paymentStatus?: 'pending' | 'paid';
-  
+
   // Scrap data
   totalScrapWeight?: number;
   commission?: number;
-  
+
   // Additional
   delayIndicator?: 'on-time' | 'delayed';
   notes?: string;
