@@ -12,6 +12,8 @@ interface KPICardProps {
   variant?: 'default' | 'success' | 'warning' | 'info' | 'destructive';
   onClick?: () => void;
   prefix?: string;
+  description?: string;
+  iconColor?: string;
 }
 
 const variantStyles = {
@@ -38,6 +40,8 @@ export function KPICard({
   variant = 'default',
   onClick,
   prefix,
+  description,
+  iconColor,
 }: KPICardProps) {
   return (
     <div
@@ -45,7 +49,7 @@ export function KPICard({
       className={cn(
         'kpi-card border',
         variantStyles[variant],
-        onClick && 'cursor-pointer'
+        onClick && 'cursor-pointer hover:shadow-md transition-shadow'
       )}
     >
       <div className="flex items-start justify-between">
@@ -54,6 +58,9 @@ export function KPICard({
           <p className="kpi-card-value mt-2">
             {prefix}{typeof value === 'number' ? value.toLocaleString() : value}
           </p>
+          {description && (
+            <p className="text-xs text-muted-foreground mt-1">{description}</p>
+          )}
           {trend && (
             <p className={cn(
               'mt-2 text-xs font-medium',
@@ -67,7 +74,7 @@ export function KPICard({
           'flex h-12 w-12 items-center justify-center rounded-xl',
           iconStyles[variant]
         )}>
-          <Icon className="h-6 w-6" />
+          <Icon className={cn("h-6 w-6", iconColor)} />
         </div>
       </div>
     </div>

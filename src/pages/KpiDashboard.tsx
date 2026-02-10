@@ -1,16 +1,11 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { useOrders } from '@/context/OrderContext';
 import { AdminLayout } from '@/components/layout/AdminLayout';
 import { PageHeader } from '@/components/layout/PageHeader';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import {
-    Select,
-    SelectContent,
-    SelectItem,
-    SelectTrigger,
-    SelectValue,
-} from '@/components/ui/select';
 import { KPICard } from '@/components/dashboard/KPICard';
+import { DatePickerWithRange } from '@/components/dashboard/DateRangePicker';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import {
     PieChart,
     Pie,
@@ -27,22 +22,68 @@ import {
     Percent,
     Clock,
     ArrowRight,
+    DollarSign,
+    TrendingUp,
+    Scale,
+    ShoppingBag,
+    Briefcase,
 } from 'lucide-react';
 import {
     calculateBusinessMetrics,
     getDateRange,
     Period
 } from '@/lib/analytics';
+import { startOfMonth, endOfMonth, parseISO } from 'date-fns';
+import { DateRange } from 'react-day-picker';
 
 export default function KpiDashboard() {
     const { orders } = useOrders();
-    const [dateRange, setDateRange] = useState<Period>('thisMonth');
+    const navigate = useNavigate();
+    const [searchParams, setSearchParams] = useSearchParams();
 
-    // Compute Metrics using Analytics Module
+    // 1. Initialize Date Range from URL or Default (This Month)
+    // We synchronize state with URL so persistence works when navigating back
+    const [dateRange, setDateRangeState] = useState<DateRange | undefined>(() => {
+        const from = searchParams.get('from');
+        const to = searchParams.get('to');
+        const now = new Date();
+        if (from && to) {
+            return { from: parseISO(from), to: parseISO(to) };
+        }
+        return { from: startOfMonth(now), to: endOfMonth(now) };
+    });
+
+    // 2. Update URL when date changes
+    const setDateRange = (range: DateRange | undefined) => {
+        setDateRangeState(range);
+        if (range?.from && range?.to) {
+            const params = new URLSearchParams(searchParams);
+            params.set('from', range.from.toISOString());
+            params.set('to', range.to.toISOString());
+            setSearchParams(params);
+        }
+    };
+
+    // 3. Compute Metrics
     const metrics = useMemo(() => {
-        const range = getDateRange(dateRange);
-        return calculateBusinessMetrics(orders, range);
+        if (!dateRange?.from || !dateRange?.to) {
+            // Fallback to avoid crash if undefined
+            return calculateBusinessMetrics(orders, { start: new Date(), end: new Date() });
+        }
+        return calculateBusinessMetrics(orders, { start: dateRange.from, end: dateRange.to });
     }, [orders, dateRange]);
+
+    // 4. Navigation Handler
+    const handleDrilldown = (metricId: string) => {
+        if (dateRange?.from && dateRange?.to) {
+            const params = new URLSearchParams();
+            params.set('from', dateRange.from.toISOString());
+            params.set('to', dateRange.to.toISOString());
+            navigate(`/kpi/${metricId}?${params.toString()}`);
+        } else {
+            navigate(`/kpi/${metricId}`);
+        }
+    };
 
     // Colors for charts
     const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042', '#8884d8'];
@@ -96,28 +137,83 @@ export default function KpiDashboard() {
                         breadcrumbs={[{ label: 'KPI Dashboard' }]}
                         showBackToDashboard={false}
                     />
-                    <div className="w-[200px]">
-                        <Select value={dateRange} onValueChange={(v) => setDateRange(v as Period)}>
-                            <SelectTrigger>
-                                <SelectValue placeholder="Select period" />
-                            </SelectTrigger>
-                            <SelectContent>
-                                <SelectItem value="thisMonth">This Month</SelectItem>
-                                <SelectItem value="lastMonth">Last Month</SelectItem>
-                                <SelectItem value="thisYear">This Year</SelectItem>
-                                <SelectItem value="all">All Time</SelectItem>
-                            </SelectContent>
-                        </Select>
+                    <div className="w-[300px]">
+                        <DatePickerWithRange date={dateRange} setDate={setDateRange} />
                     </div>
                 </div>
 
-                {/* Top KPI Cards */}
-                <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-5">
-                    <KPICard title="Total Leads" value={metrics.totalLeads} icon={Users} />
-                    <KPICard title="Completed Orders" value={metrics.completedOrders} icon={CheckCircle} variant="success" />
-                    <KPICard title="Cancelled Orders" value={metrics.cancelledOrders} icon={XCircle} variant="destructive" />
-                    <KPICard title="Repeat Orders" value={metrics.repeatOrders} icon={Repeat} variant="info" />
-                    <KPICard title="Repeat Rate" value={`${metrics.repeatRate.toFixed(1)}%`} icon={Percent} variant="warning" />
+                {/* Business Performance Section */}
+                <div className="space-y-4">
+                    <div className="flex items-center justify-between">
+                        <h3 className="text-lg font-semibold tracking-tight">Business Performance</h3>
+                        <span className="text-xs text-muted-foreground">Click cards for details</span>
+                    </div>
+                    <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+                        <KPICard
+                            title="Total Revenue"
+                            value={`₹${metrics.revenue.total.toLocaleString()}`}
+                            icon={DollarSign}
+                            description={`B2B: ₹${metrics.revenue.b2b.toLocaleString()} | B2C: ₹${metrics.revenue.b2c.toLocaleString()}`}
+                            variant="success"
+                            onClick={() => handleDrilldown('revenue')}
+                        />
+                        <KPICard
+                            title="Total GMV Sales"
+                            value={`₹${metrics.gmv.total.toLocaleString()}`}
+                            icon={TrendingUp}
+                            description={`B2B: ₹${metrics.gmv.b2b.toLocaleString()} | B2C: ₹${metrics.gmv.b2c.toLocaleString()}`}
+                            onClick={() => handleDrilldown('gmv')}
+                        />
+                        <KPICard
+                            title="Total AOV"
+                            value={`₹${metrics.aov.total.toFixed(0)}`}
+                            icon={ShoppingBag}
+                            description={`B2B: ₹${metrics.aov.b2b.toFixed(0)} | B2C: ₹${metrics.aov.b2c.toFixed(0)}`}
+                            variant="info"
+                            onClick={() => handleDrilldown('aov')}
+                        />
+                        <KPICard
+                            title="Total ARPO"
+                            value={`₹${metrics.arpo.total.toFixed(0)}`}
+                            icon={DollarSign}
+                            description={`B2B: ₹${metrics.arpo.b2b.toFixed(0)} | B2C: ₹${metrics.arpo.b2c.toFixed(0)}`}
+                            variant="warning"
+                            onClick={() => handleDrilldown('arpo')}
+                        />
+                        <KPICard
+                            title="Recycled Weight"
+                            value={`${metrics.weight.total.toLocaleString()} kg`}
+                            icon={Scale}
+                            description={`B2B: ${metrics.weight.b2b} kg | B2C: ${metrics.weight.b2c} kg`}
+                            onClick={() => handleDrilldown('weight')}
+                        />
+                        <KPICard
+                            title="Completed Orders"
+                            value={metrics.completedOrders}
+                            icon={CheckCircle}
+                            description={`B2B: ${metrics.completedSplit.b2b} | B2C: ${metrics.completedSplit.b2c}`}
+                            variant="success"
+                            onClick={() => handleDrilldown('orders')}
+                        />
+                        <KPICard
+                            title="Avg Business Inv. Value"
+                            value={`₹${metrics.avgBusinessInvoiceValue.toFixed(0)}`}
+                            icon={Briefcase}
+                            description="B2B Orders Only"
+                            variant="default"
+                        />
+                    </div>
+                </div>
+
+                {/* Operational Metrics Section */}
+                <div className="space-y-4">
+                    <h3 className="text-lg font-semibold tracking-tight">Operational Metrics</h3>
+                    <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-5">
+                        <KPICard title="Total Leads" value={metrics.totalLeads} icon={Users} />
+                        <KPICard title="Cancelled Orders" value={metrics.cancelledOrders} icon={XCircle} variant="destructive" />
+                        <KPICard title="Repeat Orders" value={metrics.repeatOrders} icon={Repeat} iconColor="text-blue-500" variant="info" />
+                        <KPICard title="Repeat Rate" value={`${metrics.repeatRate.toFixed(1)}%`} icon={Percent} variant="warning" />
+                    </div>
                 </div>
 
                 {/* Partner Performance - Boxed Section */}

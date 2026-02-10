@@ -7,6 +7,7 @@ import Login from "./pages/Login";
 import Dashboard from "./pages/Dashboard";
 import ViewAllOrders from "./pages/ViewAllOrders";
 import KpiDashboard from "./pages/KpiDashboard";
+import KPIDrilldown from "./pages/KPIDrilldown";
 import Invoices from "./pages/Invoices";
 import Partners from "./pages/Partners";
 import Customers from "./pages/Customers";
@@ -32,6 +33,7 @@ const App = () => (
             <Route path="/" element={<Dashboard />} />
             <Route path="/orders" element={<ViewAllOrders />} />
             <Route path="/kpi" element={<KpiDashboard />} />
+            <Route path="/kpi/:metricId" element={<KPIDrilldown />} />
             <Route path="/invoices" element={<Invoices />} />
             <Route path="/partners" element={<Partners />} />
             <Route path="/customers" element={<Customers />} />

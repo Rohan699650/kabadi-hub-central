@@ -3,258 +3,22 @@ import { Order, Partner, Customer, Material, PartnerPricing, Notification, Notif
 const today = new Date();
 const yesterday = new Date(today);
 yesterday.setDate(yesterday.getDate() - 1);
+const twoDaysAgo = new Date(today);
+twoDaysAgo.setDate(twoDaysAgo.getDate() - 2);
+const lastWeek = new Date(today);
+lastWeek.setDate(lastWeek.getDate() - 7);
+const lastMonth = new Date(today);
+lastMonth.setDate(lastMonth.getDate() - 30);
 
-export const mockOrders: Order[] = [
-  {
-    id: 'KM250001',
-    createdAt: new Date(today.getFullYear(), today.getMonth(), today.getDate(), 8, 30, 0),
-    customerId: 'KM250101',
-    customerName: 'Rajesh Kumar',
-    customerPhone: '+91 98765 43210',
-    city: 'Bangalore',
-    area: 'Koramangala',
-    address: '123, 5th Cross, Koramangala 4th Block, Bangalore - 560034',
-    pickupDate: today,
-    pickupSlot: '10:00 AM - 12:00 PM',
-    scrapCategory: 'Mixed Household',
-    scrapPhotos: ['/placeholder.svg', '/placeholder.svg'],
-    description: 'Old newspapers, plastic bottles, and some electronic waste',
-    status: 'new',
-    partnerStatus: undefined,
-    orderSource: 'app',
-    createdBy: 'Customer',
-    cancellationEligibility: true,
-  },
-  {
-    id: 'KM250002',
-    createdAt: new Date(today.getFullYear(), today.getMonth(), today.getDate(), 9, 15, 0),
-    customerId: 'KM250102',
-    customerName: 'Priya Sharma',
-    customerPhone: '+91 87654 32109',
-    city: 'Bangalore',
-    area: 'HSR Layout',
-    address: '456, 7th Main, HSR Layout Sector 2, Bangalore - 560102',
-    pickupDate: today,
-    pickupSlot: '2:00 PM - 4:00 PM',
-    scrapCategory: 'Metal',
-    scrapPhotos: ['/placeholder.svg'],
-    description: 'Metal scrap from home renovation',
-    status: 'scheduled',
-    partnerStatus: 'active',
-    partnerId: 'KM250201',
-    partnerName: 'Suresh Yadav',
-    partnerPhone: '+91 99887 76655',
-    assignedAt: new Date(today.getFullYear(), today.getMonth(), today.getDate(), 9, 30, 0),
-    scheduledAt: new Date(today.getFullYear(), today.getMonth(), today.getDate(), 9, 30, 0),
-    orderSource: 'web',
-    createdBy: 'Customer',
-    delayIndicator: 'on-time',
-    cancellationEligibility: true,
-  },
-  {
-    id: 'KM250003',
-    createdAt: new Date(today.getFullYear(), today.getMonth(), today.getDate(), 7, 0, 0),
-    customerId: 'KM250103',
-    customerName: 'Amit Patel',
-    customerPhone: '+91 76543 21098',
-    city: 'Bangalore',
-    area: 'Indiranagar',
-    address: '789, 12th Cross, Indiranagar, Bangalore - 560038',
-    pickupDate: today,
-    pickupSlot: '9:00 AM - 11:00 AM',
-    scrapCategory: 'E-Waste',
-    scrapPhotos: ['/placeholder.svg', '/placeholder.svg', '/placeholder.svg'],
-    description: 'Office clearance - papers, computers, furniture',
-    status: 'on-the-way',
-    partnerStatus: 'active',
-    partnerId: 'KM250202',
-    partnerName: 'Ramesh Gupta',
-    partnerPhone: '+91 88776 65544',
-    assignedAt: new Date(today.getFullYear(), today.getMonth(), today.getDate(), 7, 30, 0),
-    scheduledAt: new Date(today.getFullYear(), today.getMonth(), today.getDate(), 7, 30, 0),
-    startedAt: new Date(today.getFullYear(), today.getMonth(), today.getDate(), 8, 45, 0),
-    otwTimestamp: new Date(today.getFullYear(), today.getMonth(), today.getDate(), 8, 45, 0),
-    arrivalOtp: '4521',
-    arrivalOtpStatus: 'generated',
-    scrapVerificationPending: true,
-    invoiceStatus: 'not-submitted',
-    orderSource: 'phone',
-    createdBy: 'Admin',
-    cancellationEligibility: true,
-  },
-  {
-    id: 'KM250004',
-    createdAt: new Date(today.getFullYear(), today.getMonth(), today.getDate(), 6, 0, 0),
-    customerId: 'KM250104',
-    customerName: 'Sneha Reddy',
-    customerPhone: '+91 65432 10987',
-    city: 'Bangalore',
-    area: 'Whitefield',
-    address: '321, ITPL Main Road, Whitefield, Bangalore - 560066',
-    pickupDate: today,
-    pickupSlot: '8:00 AM - 10:00 AM',
-    scrapCategory: 'Paper & Cardboard',
-    scrapPhotos: ['/placeholder.svg'],
-    description: 'Cardboard boxes and packaging material',
-    status: 'completed',
-    partnerStatus: 'active',
-    partnerId: 'KM250201',
-    partnerName: 'Suresh Yadav',
-    partnerPhone: '+91 99887 76655',
-    assignedAt: new Date(today.getFullYear(), today.getMonth(), today.getDate(), 6, 30, 0),
-    scheduledAt: new Date(today.getFullYear(), today.getMonth(), today.getDate(), 6, 30, 0),
-    startedAt: new Date(today.getFullYear(), today.getMonth(), today.getDate(), 7, 45, 0),
-    otwTimestamp: new Date(today.getFullYear(), today.getMonth(), today.getDate(), 7, 45, 0),
-    arrivedAt: new Date(today.getFullYear(), today.getMonth(), today.getDate(), 8, 15, 0),
-    invoiceSubmittedAt: new Date(today.getFullYear(), today.getMonth(), today.getDate(), 8, 30, 0),
-    invoiceApprovedAt: new Date(today.getFullYear(), today.getMonth(), today.getDate(), 8, 45, 0),
-    completedAt: new Date(today.getFullYear(), today.getMonth(), today.getDate(), 9, 0, 0),
-    arrivalOtp: '7823',
-    arrivalOtpStatus: 'verified',
-    scrapVerificationPending: false,
-    totalScrapWeight: 35,
-    customerInvoice: {
-      items: [
-        { materialId: 'KM250301', materialName: 'Cardboard', quantity: 25, unit: 'kg', rate: 8, total: 200 },
-        { materialId: 'KM250302', materialName: 'Paper', quantity: 10, unit: 'kg', rate: 12, total: 120 },
-      ],
-      total: 320,
-    },
-    partnerInvoice: {
-      items: [
-        { materialId: 'KM250301', materialName: 'Cardboard', quantity: 25, unit: 'kg', rate: 10, total: 250 },
-        { materialId: 'KM250302', materialName: 'Paper', quantity: 10, unit: 'kg', rate: 15, total: 150 },
-      ],
-      total: 400,
-    },
-    commission: 80,
-    invoiceStatus: 'approved',
-    paymentMode: 'upi',
-    paymentStatus: 'paid',
-    orderSource: 'app',
-    createdBy: 'Customer',
-    cancellationEligibility: false,
-  },
-  {
-    id: 'KM250005',
-    createdAt: new Date(today.getFullYear(), today.getMonth(), today.getDate(), 10, 0, 0),
-    customerId: 'KM250105',
-    customerName: 'Vikram Singh',
-    customerPhone: '+91 54321 09876',
-    city: 'Bangalore',
-    area: 'Jayanagar',
-    address: '555, 4th Block, Jayanagar, Bangalore - 560041',
-    pickupDate: today,
-    pickupSlot: '4:00 PM - 6:00 PM',
-    scrapCategory: 'Mixed Household',
-    scrapPhotos: [],
-    description: 'Mixed household scrap',
-    status: 'cancelled',
-    cancelReason: 'Customer not available',
-    cancelledBy: 'admin',
-    cancelledAt: new Date(today.getFullYear(), today.getMonth(), today.getDate(), 10, 30, 0),
-    orderStageAtCancellation: 'new',
-    refundRequired: false,
-    orderSource: 'app',
-    createdBy: 'Customer',
-    cancellationEligibility: false,
-  },
-  {
-    id: 'KM250006',
-    createdAt: new Date(today.getFullYear(), today.getMonth(), today.getDate(), 11, 0, 0),
-    customerId: 'KM250101',
-    customerName: 'Rajesh Kumar',
-    customerPhone: '+91 98765 43210',
-    city: 'Bangalore',
-    area: 'Koramangala',
-    address: '123, 5th Cross, Koramangala 4th Block, Bangalore - 560034',
-    pickupDate: new Date(today.getTime() + 86400000),
-    pickupSlot: '10:00 AM - 12:00 PM',
-    scrapCategory: 'Paper & Cardboard',
-    scrapPhotos: ['/placeholder.svg'],
-    description: 'More newspapers and bottles',
-    status: 'new',
-    orderSource: 'web',
-    createdBy: 'Customer',
-    cancellationEligibility: true,
-  },
-  {
-    id: 'KM250007',
-    createdAt: new Date(today.getFullYear(), today.getMonth(), today.getDate(), 8, 0, 0),
-    customerId: 'KM250106',
-    customerName: 'Meera Nair',
-    customerPhone: '+91 43210 98765',
-    city: 'Bangalore',
-    area: 'BTM Layout',
-    address: '777, 2nd Stage, BTM Layout, Bangalore - 560076',
-    pickupDate: today,
-    pickupSlot: '11:00 AM - 1:00 PM',
-    scrapCategory: 'E-Waste',
-    scrapPhotos: ['/placeholder.svg', '/placeholder.svg'],
-    description: 'E-waste - old laptops and phones',
-    status: 'arrived',
-    partnerStatus: 'active',
-    partnerId: 'KM250203',
-    partnerName: 'Anil Kumar',
-    partnerPhone: '+91 77665 54433',
-    assignedAt: new Date(today.getFullYear(), today.getMonth(), today.getDate(), 8, 30, 0),
-    scheduledAt: new Date(today.getFullYear(), today.getMonth(), today.getDate(), 8, 30, 0),
-    startedAt: new Date(today.getFullYear(), today.getMonth(), today.getDate(), 10, 30, 0),
-    otwTimestamp: new Date(today.getFullYear(), today.getMonth(), today.getDate(), 10, 30, 0),
-    arrivedAt: new Date(today.getFullYear(), today.getMonth(), today.getDate(), 11, 15, 0),
-    arrivalOtp: '9156',
-    arrivalOtpStatus: 'verified',
-    scrapVerificationPending: true,
-    invoiceStatus: 'not-submitted',
-    orderSource: 'app',
-    createdBy: 'Customer',
-    cancellationEligibility: true,
-  },
-  {
-    id: 'KM250008',
-    createdAt: new Date(today.getFullYear(), today.getMonth(), today.getDate(), 9, 0, 0),
-    customerId: 'KM250107',
-    customerName: 'Karthik Menon',
-    customerPhone: '+91 32109 87654',
-    city: 'Bangalore',
-    area: 'Electronic City',
-    address: '999, Phase 1, Electronic City, Bangalore - 560100',
-    pickupDate: today,
-    pickupSlot: '3:00 PM - 5:00 PM',
-    scrapCategory: 'Industrial Metal',
-    scrapPhotos: [],
-    description: 'Industrial scrap - metals and plastics',
-    status: 'scheduled',
-    partnerStatus: 'active',
-    partnerId: 'KM250202',
-    partnerName: 'Ramesh Gupta',
-    partnerPhone: '+91 88776 65544',
-    assignedAt: new Date(today.getFullYear(), today.getMonth(), today.getDate(), 9, 45, 0),
-    scheduledAt: new Date(today.getFullYear(), today.getMonth(), today.getDate(), 9, 45, 0),
-    totalScrapWeight: 70,
-    customerInvoice: {
-      items: [
-        { materialId: 'KM250303', materialName: 'Iron', quantity: 50, unit: 'kg', rate: 25, total: 1250 },
-        { materialId: 'KM250304', materialName: 'Plastic', quantity: 20, unit: 'kg', rate: 15, total: 300 },
-      ],
-      total: 1550,
-    },
-    partnerInvoice: {
-      items: [
-        { materialId: 'KM250303', materialName: 'Iron', quantity: 50, unit: 'kg', rate: 30, total: 1500 },
-        { materialId: 'KM250304', materialName: 'Plastic', quantity: 20, unit: 'kg', rate: 18, total: 360 },
-      ],
-      total: 1860,
-    },
-    commission: 310,
-    invoiceStatus: 'pending',
-    orderSource: 'phone',
-    createdBy: 'Admin',
-    delayIndicator: 'on-time',
-    cancellationEligibility: true,
-  },
-];
+// Helper to generate dates
+const getDate = (daysAgo: number, hour: number = 10) => {
+  const d = new Date();
+  d.setDate(d.getDate() - daysAgo);
+  d.setHours(hour, 0, 0, 0);
+  return d;
+};
 
+// --- Partners ---
 export const mockPartners: Partner[] = [
   {
     id: 'KM250201',
@@ -362,9 +126,10 @@ export const mockPartners: Partner[] = [
     cancelledOrders: 0,
     rating: 0,
     joinedAt: new Date('2024-01-10'),
-  },
+  }
 ];
 
+// --- Customers ---
 export const mockCustomers: Customer[] = [
   {
     id: 'KM250101',
@@ -395,9 +160,9 @@ export const mockCustomers: Customer[] = [
   },
   {
     id: 'KM250103',
-    name: 'Amit Patel',
+    name: 'TechSolutions Pvt Ltd',
     phone: '+91 76543 21098',
-    email: 'amit.patel@email.com',
+    email: 'ops@techsolutions.com',
     city: 'Bangalore',
     area: 'Indiranagar',
     address: '789, 12th Cross, Indiranagar, Bangalore - 560038',
@@ -421,7 +186,7 @@ export const mockCustomers: Customer[] = [
   },
   {
     id: 'KM250105',
-    name: 'Vikram Singh',
+    name: 'Green Earth NGO',
     phone: '+91 54321 09876',
     city: 'Bangalore',
     area: 'Jayanagar',
@@ -430,35 +195,9 @@ export const mockCustomers: Customer[] = [
     totalAmount: 800,
     createdAt: new Date('2023-12-10'),
   },
-  {
-    id: 'KM250106',
-    name: 'Meera Nair',
-    phone: '+91 43210 98765',
-    email: 'meera.nair@email.com',
-    city: 'Bangalore',
-    area: 'BTM Layout',
-    address: '777, 2nd Stage, BTM Layout, Bangalore - 560076',
-    totalOrders: 6,
-    totalAmount: 2800,
-    lastPickupDate: new Date(),
-    createdAt: new Date('2023-08-05'),
-  },
-  {
-    id: 'KM250107',
-    name: 'Karthik Menon',
-    phone: '+91 32109 87654',
-    email: 'karthik.menon@email.com',
-    city: 'Bangalore',
-    area: 'Electronic City',
-    address: '999, Phase 1, Electronic City, Bangalore - 560100',
-    totalOrders: 4,
-    totalAmount: 6200,
-    lastPickupDate: new Date(),
-    notes: 'Industrial client',
-    createdAt: new Date('2023-10-20'),
-  },
 ];
 
+// --- Materials ---
 export const mockMaterials: Material[] = [
   { id: 'KM250301', name: 'Cardboard', category: 'Paper', unit: 'kg', customerRate: 8, isActive: true, updatedAt: new Date(), updatedBy: 'Admin' },
   { id: 'KM250302', name: 'Paper', category: 'Paper', unit: 'kg', customerRate: 12, isActive: true, updatedAt: new Date(), updatedBy: 'Admin' },
@@ -485,6 +224,268 @@ export const mockPartnerPricing: PartnerPricing[] = mockPartners.map(partner => 
   })),
 }));
 
+// --- Orders Generator ---
+const generateOrders = (): Order[] => {
+  const orders: Order[] = [];
+  let orderId = 250001;
+
+  // 1. New Orders (Recent)
+  orders.push({
+    id: `KM${orderId++}`,
+    createdAt: new Date(),
+    customerId: 'KM250101',
+    customerName: 'Rajesh Kumar',
+    customerPhone: '+91 98765 43210',
+    city: 'Bangalore',
+    area: 'Koramangala',
+    address: '123, 5th Cross, Koramangala 4th Block, Bangalore - 560034',
+    pickupDate: new Date(),
+    pickupSlot: '10:00 AM - 12:00 PM',
+    scrapCategory: 'Mixed Household',
+    scrapPhotos: ['/placeholder.svg'],
+    description: 'Old newspapers, plastic bottles',
+    status: 'new',
+    orderSource: 'app',
+    createdBy: 'Customer',
+    cancellationEligibility: true,
+  });
+
+  orders.push({
+    id: `KM${orderId++}`,
+    createdAt: new Date(Date.now() - 3600000), // 1 hour ago
+    customerId: 'KM250102',
+    customerName: 'Priya Sharma',
+    customerPhone: '+91 87654 32109',
+    city: 'Bangalore',
+    area: 'HSR Layout',
+    address: '456, 7th Main, HSR Layout, Bangalore',
+    pickupDate: new Date(),
+    pickupSlot: '2:00 PM - 4:00 PM',
+    scrapCategory: 'E-Waste',
+    scrapPhotos: [],
+    description: 'Old monitor and CPU',
+    status: 'new',
+    orderSource: 'web',
+    createdBy: 'Customer',
+    cancellationEligibility: true,
+  });
+
+  // 1b. Bulk New Orders (For Dashboard "New Orders Today")
+  for (let i = 0; i < 8; i++) {
+    const cust = mockCustomers[i % mockCustomers.length];
+    orders.push({
+      id: `KM${orderId++}`,
+      createdAt: new Date(), // Today
+      customerId: cust.id,
+      customerName: cust.name,
+      customerPhone: cust.phone,
+      city: 'Bangalore',
+      area: cust.area || 'Koramangala',
+      address: cust.address || 'Address...',
+      pickupDate: new Date(),
+      pickupSlot: '10:00 AM - 12:00 PM',
+      scrapCategory: i % 2 === 0 ? 'Mixed Household' : 'Paper',
+      scrapPhotos: [],
+      description: 'Bulk household scrap',
+      status: 'new',
+      orderSource: 'app',
+      createdBy: 'Customer',
+      cancellationEligibility: true,
+    });
+  }
+
+  // 1c. Pending Approvals (Invoice Submitted but not Approved)
+  for (let i = 0; i < 5; i++) {
+    const cust = mockCustomers[(i + 2) % mockCustomers.length];
+    const partner = mockPartners[i % mockPartners.length];
+    orders.push({
+      id: `KM${orderId++}`,
+      createdAt: getDate(1),
+      customerId: cust.id,
+      customerName: cust.name,
+      customerPhone: cust.phone,
+      city: 'Bangalore',
+      area: cust.area || 'Indiranagar',
+      address: cust.address,
+      pickupDate: getDate(1),
+      pickupSlot: '2:00 PM - 4:00 PM',
+      scrapCategory: 'Metal',
+      scrapPhotos: [],
+      description: 'Pending approval test',
+      status: 'completed', // Completed physically
+      invoiceStatus: 'pending', // But invoice pending logic
+      partnerStatus: 'active',
+      partnerId: partner.id,
+      partnerName: partner.name,
+      partnerPhone: partner.phone,
+      assignedAt: getDate(1),
+      scheduledAt: getDate(1),
+      startedAt: getDate(1, 11),
+      otwTimestamp: getDate(1, 11),
+      arrivedAt: getDate(1, 12),
+      completedAt: getDate(1, 13),
+      totalScrapWeight: 25,
+      customerInvoice: { total: 250, items: [] },
+      partnerInvoice: { total: 300, items: [] },
+      commission: 50,
+      orderSource: 'app',
+      createdBy: 'Customer',
+      cancellationEligibility: false,
+    });
+  }
+
+  // 2. Scheduled/Assigned Orders
+  orders.push({
+    id: `KM${orderId++}`,
+    createdAt: getDate(1),
+    customerId: 'KM250103',
+    customerName: 'TechSolutions Pvt Ltd',
+    customerPhone: '+91 76543 21098',
+    city: 'Bangalore',
+    area: 'Indiranagar',
+    address: '789, 12th Cross, Indiranagar, Bangalore',
+    pickupDate: getDate(0),
+    pickupSlot: '11:00 AM - 1:00 PM',
+    scrapCategory: 'Corporate', // B2B
+    scrapPhotos: [],
+    description: 'Office cleanout - bulk paper',
+    status: 'scheduled',
+    partnerStatus: 'active',
+    partnerId: 'KM250201',
+    partnerName: 'Suresh Yadav',
+    partnerPhone: '+91 99887 76655',
+    assignedAt: getDate(1),
+    scheduledAt: getDate(1),
+    orderSource: 'web',
+    createdBy: 'Customer',
+    cancellationEligibility: true,
+  });
+
+  // 3. Ongoing Orders
+  orders.push({
+    id: `KM${orderId++}`,
+    createdAt: getDate(0, 8),
+    customerId: 'KM250104',
+    customerName: 'Sneha Reddy',
+    customerPhone: '+91 65432 10987',
+    city: 'Bangalore',
+    area: 'Whitefield',
+    address: '321, ITPL Main Road, Whitefield',
+    pickupDate: getDate(0),
+    pickupSlot: '9:00 AM - 11:00 AM',
+    scrapCategory: 'Paper',
+    scrapPhotos: [],
+    description: 'Newspapers',
+    status: 'on-the-way',
+    partnerStatus: 'active',
+    partnerId: 'KM250202',
+    partnerName: 'Ramesh Gupta',
+    partnerPhone: '+91 88776 65544',
+    assignedAt: getDate(0, 8),
+    scheduledAt: getDate(0, 8),
+    otwTimestamp: getDate(0, 9),
+    arrivalOtp: '1234',
+    arrivalOtpStatus: 'generated',
+    orderSource: 'app',
+    createdBy: 'Customer',
+    cancellationEligibility: true,
+  });
+
+  // 4. Completed Orders (Historical - Last 30 Days)
+  // Generating 20+ completed orders for analytics
+  const pastCustomers = [mockCustomers[0], mockCustomers[1], mockCustomers[2]];
+  const pastPartners = [mockPartners[0], mockPartners[1], mockPartners[2]];
+
+  for (let i = 1; i <= 25; i++) {
+    const daysAgo = Math.floor(Math.random() * 60); // Last 60 days
+    const date = getDate(daysAgo);
+    const cust = pastCustomers[i % 3];
+    const partner = pastPartners[i % 3];
+    const isB2B = i % 3 === 2; // Every 3rd is B2B
+
+    const weight = Math.floor(Math.random() * 50) + 10;
+    const custRate = isB2B ? 10 : 12;
+    const partRate = isB2B ? 12 : 15;
+    const custTotal = weight * custRate;
+    const partTotal = weight * partRate;
+    const commission = partTotal - custTotal;
+
+    orders.push({
+      id: `KM${orderId++}`,
+      createdAt: date,
+      customerId: cust.id,
+      customerName: cust.name,
+      customerPhone: cust.phone,
+      city: cust.city,
+      area: cust.area,
+      address: cust.address,
+      pickupDate: date,
+      pickupSlot: '10:00 AM - 12:00 PM',
+      scrapCategory: isB2B ? 'Industrial' : 'Mixed Household',
+      scrapPhotos: [],
+      description: isB2B ? 'Factory waste metal' : 'Household items',
+      status: 'completed',
+      partnerStatus: 'active',
+      partnerId: partner.id,
+      partnerName: partner.name,
+      partnerPhone: partner.phone,
+      assignedAt: getDate(daysAgo, 9),
+      scheduledAt: getDate(daysAgo, 9),
+      startedAt: getDate(daysAgo, 10),
+      otwTimestamp: getDate(daysAgo, 10),
+      arrivedAt: getDate(daysAgo, 10.5),
+      completedAt: getDate(daysAgo, 11),
+      totalScrapWeight: weight,
+      invoiceStatus: 'approved',
+      customerInvoice: {
+        total: custTotal,
+        items: [{ materialId: '1', materialName: 'Scrap', quantity: weight, unit: 'kg', rate: custRate, total: custTotal }]
+      },
+      partnerInvoice: {
+        total: partTotal,
+        items: [{ materialId: '1', materialName: 'Scrap', quantity: weight, unit: 'kg', rate: partRate, total: partTotal }]
+      },
+      commission: commission,
+      orderSource: 'app',
+      createdBy: 'Customer',
+      cancellationEligibility: false,
+    });
+  }
+
+  // 5. Cancelled Orders
+  for (let i = 1; i <= 5; i++) {
+    const daysAgo = Math.floor(Math.random() * 30);
+    const date = getDate(daysAgo);
+    orders.push({
+      id: `KM${orderId++}`,
+      createdAt: date,
+      customerId: mockCustomers[0].id,
+      customerName: 'Rajesh Kumar',
+      customerPhone: '+91 98765 43210',
+      city: 'Bangalore',
+      area: 'Koramangala',
+      address: 'Address..',
+      pickupDate: date,
+      pickupSlot: '10:00 AM',
+      scrapCategory: 'Plastic',
+      scrapPhotos: [],
+      description: 'Bottles',
+      status: 'cancelled',
+      cancelReason: 'Customer unavailable',
+      cancelledBy: 'partner',
+      cancelledAt: getDate(daysAgo, 12),
+      orderSource: 'app',
+      createdBy: 'Customer',
+      cancellationEligibility: false,
+    });
+  }
+
+  return orders;
+};
+
+export const mockOrders: Order[] = generateOrders();
+
+// --- Notifications ---
 export const mockNotifications: Notification[] = [
   {
     id: 'KM250401',
@@ -646,12 +647,6 @@ export const pickupSlots = [
 ];
 
 export const notificationTemplatesList = [
-  { id: 'order_confirmed', name: 'Order Confirmed', subject: 'Your order {{orderId}} is confirmed', body: 'Hello {{customerName}}, your order {{orderId}} has been confirmed and will be picked up on {{pickupDate}}.' },
-  { id: 'order_scheduled', name: 'Order Scheduled', subject: 'Pickup Scheduled - {{orderId}}', body: 'Hello {{customerName}}, your order {{orderId}} is scheduled for pickup on {{pickupDate}} at {{pickupSlot}}.' },
-  { id: 'order_completed', name: 'Order Completed', subject: 'Order Completed - {{orderId}}', body: 'Hello {{customerName}}, your order {{orderId}} has been completed. Total amount: ₹{{amount}}.' },
-  { id: 'order_cancelled', name: 'Order Cancelled', subject: 'Order Cancelled - {{orderId}}', body: 'Hello {{customerName}}, your order {{orderId}} has been cancelled. Reason: {{reason}}.' },
-  { id: 'payment_received', name: 'Payment Received', subject: 'Payment Received - ₹{{amount}}', body: 'Hello {{customerName}}, we have received your payment of ₹{{amount}} for order {{orderId}}.' },
-  { id: 'service_reminder', name: 'Service Reminder', subject: 'Scrap Pickup Reminder', body: 'Hello {{customerName}}, it has been a while since your last pickup. Schedule a new pickup today!' },
-  { id: 'promotional_offer', name: 'Promotional Offer', subject: 'Special Offer Just For You!', body: 'Hello {{customerName}}, enjoy special rates on scrap pickup this week. Book now!' },
-  { id: 'feedback_request', name: 'Feedback Request', subject: 'How was your experience?', body: 'Hello {{customerName}}, please take a moment to rate your recent pickup experience.' },
+  { id: 'order_confirmed', name: 'Order Confirmed', subject: 'Your order {{orderId}} is confirmed', body: 'Hello {{customerName}}, your order {{orderId}} is confirmed.' },
+  { id: 'payment_received', name: 'Payment Received', subject: 'Payment Received', body: 'We received payment.' }
 ];

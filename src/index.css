@@ -13,10 +13,11 @@
     --popover: 0 0% 100%;
     --popover-foreground: 150 10% 10%;
 
-    --primary: 142 76% 36%;
+    /* Standard Green Theme */
+    --primary: 142 76% 36%;  /* Green 600 */
     --primary-foreground: 0 0% 100%;
 
-    --secondary: 140 20% 94%;
+    --secondary: 140 20% 96%; /* Very light green */
     --secondary-foreground: 150 10% 20%;
 
     --muted: 140 10% 92%;
@@ -41,9 +42,9 @@
     --input: 140 15% 88%;
     --ring: 142 76% 36%;
 
-    --radius: 0.625rem;
+    --radius: 0.5rem;
 
-    --sidebar-background: 150 15% 8%;
+    --sidebar-background: 150 15% 8%; /* Dark Green/Black */
     --sidebar-foreground: 140 10% 85%;
     --sidebar-primary: 142 76% 42%;
     --sidebar-primary-foreground: 0 0% 100%;
@@ -51,23 +52,16 @@
     --sidebar-accent-foreground: 140 10% 90%;
     --sidebar-border: 150 15% 18%;
     --sidebar-ring: 142 76% 42%;
-    --sidebar-muted: 150 10% 40%;
-
-    --chart-1: 142 76% 36%;
-    --chart-2: 142 50% 50%;
-    --chart-3: 38 92% 50%;
-    --chart-4: 199 89% 48%;
-    --chart-5: 0 84% 60%;
   }
 
   .dark {
-    --background: 150 15% 8%;
+    --background: 150 15% 5%;
     --foreground: 140 10% 95%;
 
-    --card: 150 15% 12%;
+    --card: 150 15% 10%;
     --card-foreground: 140 10% 95%;
 
-    --popover: 150 15% 12%;
+    --popover: 150 15% 10%;
     --popover-foreground: 140 10% 95%;
 
     --primary: 142 76% 42%;
@@ -89,7 +83,7 @@
     --input: 150 15% 20%;
     --ring: 142 76% 42%;
 
-    --sidebar-background: 150 15% 5%;
+    --sidebar-background: 150 15% 3%;
     --sidebar-foreground: 140 10% 85%;
     --sidebar-primary: 142 76% 42%;
     --sidebar-primary-foreground: 0 0% 100%;
@@ -104,34 +98,8 @@
   * {
     @apply border-border;
   }
-
   body {
     @apply bg-background text-foreground antialiased;
-    font-feature-settings: "rlig" 1, "calt" 1;
-  }
-}
-
-@layer utilities {
-  .scrollbar-thin {
-    scrollbar-width: thin;
-  }
-  
-  .scrollbar-thin::-webkit-scrollbar {
-    width: 6px;
-    height: 6px;
-  }
-  
-  .scrollbar-thin::-webkit-scrollbar-track {
-    background: transparent;
-  }
-  
-  .scrollbar-thin::-webkit-scrollbar-thumb {
-    background: hsl(var(--muted-foreground) / 0.3);
-    border-radius: 3px;
-  }
-  
-  .scrollbar-thin::-webkit-scrollbar-thumb:hover {
-    background: hsl(var(--muted-foreground) / 0.5);
   }
 }
 
@@ -139,37 +107,5 @@
   .kpi-card {
     @apply bg-card rounded-lg border p-5 cursor-pointer transition-all duration-200;
     @apply hover:shadow-lg hover:border-primary/30 hover:-translate-y-0.5;
-  }
-  
-  .kpi-card-value {
-    @apply text-3xl font-bold text-foreground;
-  }
-  
-  .kpi-card-label {
-    @apply text-sm text-muted-foreground mt-1;
-  }
-  
-  .status-badge {
-    @apply inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium;
-  }
-  
-  .status-new {
-    @apply bg-info/10 text-info;
-  }
-  
-  .status-scheduled {
-    @apply bg-primary/10 text-primary;
-  }
-  
-  .status-ongoing {
-    @apply bg-warning/10 text-warning;
-  }
-  
-  .status-completed {
-    @apply bg-success/10 text-success;
-  }
-  
-  .status-cancelled {
-    @apply bg-destructive/10 text-destructive;
   }
 }
